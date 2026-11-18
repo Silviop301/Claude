@@ -836,7 +836,7 @@
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
         '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
-        '<div class="ldl-g4" id="ldl-g4">' + Object.keys(S.CO_SHOUT).map(k => '<button data-gr="' + k + '"><b>' + S.CO_SHOUT[k].name + '</b><small>' + S.CO_SHOUT[k].sub + '</small></button>').join('') + '</div>' +
+        '<div class="ldl-g4" id="ldl-g4">' + Object.keys(S.CO_SHOUT).map(k => '<button data-gr="' + k + '">' + (GR_ICO[k] || '') + '<b>' + S.CO_SHOUT[k].name + '</b><small>' + S.CO_SHOUT[k].sub + '</small></button>').join('') + '</div>' +
         '<button class="ldl-num" id="ldl-num" aria-label="Números do jogo">Números</button><span class="ld-gr"></span>' + o.speedHtml +
         '<button class="ld-gold ldl-stop" id="b-lv-stop">' + o.pause + '<b>Parar e mexer</b></button></div>' +
       '<div hidden><b id="lv-sh"></b><b id="lv-ot"></b><b id="lv-ps"></b><div id="lv-cst"></div><b id="lv-momw"></b><span id="lv-mom"></span><div id="lv-aux"></div></div>' +
@@ -855,6 +855,9 @@
   // Momentos do auxiliar (2026-11-12, desenho B aprovado pelo Silvio): 2 ou 3 vezes por jogo, quando algo acontece de verdade, a
   // auxiliar pede uma decisão de 5 s no painel da direita, por cima dos gritos. Cada escolha é um grito que já existe (vale 10
   // minutos, com as setas no campo); "deixar" não muda nada. Quando o grito acaba, ela diz se funcionou (lista e recado no campo)
+  // Ícone de cada grito no botão: o mesmo desenho que o campo mostra quando você grita (livesim cue), para ligar um ao outro
+  const GR_ICO = { pressionar: 'M3 3l5 5-5 5M10 3l5 5-5 5M17 3l5 5-5 5', recuar: 'M21 3l-5 5 5 5M14 3l-5 5 5 5M7 3l-5 5 5 5', segurar: 'M9 2v12M15 2v12', lados: 'M7 6l5-4 5 4M7 10l5 4 5-4' };
+  Object.keys(GR_ICO).forEach(k => { GR_ICO[k] = '<i class="gi"><svg viewBox="0 0 24 16" aria-hidden="true"><path d="' + GR_ICO[k] + '"/></svg></i>'; });
   const MOM_T = 5000, MOM_GAP = 14, MOM_MAX = 3;
   const momWin = (m, a, b) => { const r = { gu: 0, gt: 0, su: 0, st: 0 };
     m.ev.forEach(e => { if (e.m < a || e.m > b || (e.t !== 'gol' && e.t !== 'chance')) return; const u = e.s === 'us';
@@ -960,6 +963,7 @@
         if (p) { m.enSaid[p.id] = 1; const r = m.us.bench.map(id => by[id]).filter(q => q && q.pos === p.pos && !q.out && !(m.us.gone || []).includes(q.id)).sort((a, b) => b.ovr - a.ovr)[0];
           planToast('no', 'VAI CANSAR LOGO', p.n.split(' ').pop() + ' está no limite. ' + (r ? 'Ponha ' + r.n.split(' ').pop() + ' na próxima parada' : 'Troque na próxima parada')); } } }
     momTick(x);
+    g.classList.toggle('rev', x.atk < 0); // setas do Pressionar/Recuar apontam para onde o time ataca na tela (vira no 2º tempo)
     g.querySelectorAll('[data-gr]').forEach(b => { const on = !!sh && sh.k === b.dataset.gr; b.classList.toggle('on', on); b.disabled = !!sh && !on;
       b.querySelector('small').textContent = on ? 'até os ' + sh.until + '\'' : S.CO_SHOUT[b.dataset.gr].sub; });
     const st = x.stats();
