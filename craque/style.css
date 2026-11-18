@@ -7671,6 +7671,9 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .ldl-g4 b { font: 800 16px/1.05 var(--display); } .ldl-g4 small { font: 600 12px/1.15 var(--body); color: var(--tx-3); }
 .ldl-g4 button.on { background: var(--paper) !important; color: var(--ink) !important; border-color: var(--paper) !important; } .ldl-g4 button.on small { color: var(--ink-2); }
 .ldl-g4 button:disabled { opacity: .45; }
+/* Ícone do grito (o mesmo do campo) em cima do nome; a linha pequena só aparece no ativo ("até os 62'"), no lugar do ícone */
+.ldl-g4 .gi { display: block; width: 26px; height: 15px; margin-bottom: 3px; flex: none; } .ldl-g4 .gi svg { display: block; width: 100%; height: 100%; fill: none; stroke: var(--gold, #F2C230); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.ldl-g4.rev .gi svg { transform: scaleX(-1); } .ldl-g4 button small { display: none; } .ldl-g4 button.on small { display: block; } .ldl-g4 button.on .gi { display: none; }
 .ldl-side .lv-speed { background: #141517; } .ldl-side .lv-speed button { flex: 1; height: 38px; min-width: 0; font-size: 17px; }
 .ldl-stop { flex-direction: row !important; gap: 6px; min-height: 42px !important; } .ldl-stop b { font-size: 16px !important; }
 .ldl-stop.on { background: var(--paper) !important; box-shadow: 0 0 0 2px var(--gold); }

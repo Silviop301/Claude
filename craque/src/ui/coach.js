@@ -1144,6 +1144,8 @@
       const move = () => { if (firstMove === null) firstMove = m.min; };
       ctx = { m, co, nm, last, LANE, feedLine: e => feedLine(m, e), cadLines, avail, pend, susTxt, posTxt, STY_SHORT, FORM_TIP,
         get read() { return read || (read = S.coRead(co, m)); },
+        // Para que lado o seu time ataca na tela agora (1 direita, -1 esquerda): fora de casa e no 2º tempo o desenho espelha
+        get atk() { return sim && sim.mirror ? (sim.mirror() ? -1 : 1) : 1; },
         get open() { return open; }, get busy() { return open || !!wait || m.done; },
         // Pausa para um popup (jogador tocado); volta false se o jogo não pode parar agora
         pause() { if (open || wait || m.done) return false; clearTimeout(timer); open = true; read = S.coRead(co, m); if (sim) { clearTimeout(frz); sim.freeze(true); } return true; },

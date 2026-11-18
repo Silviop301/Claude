@@ -81,7 +81,7 @@
     const isMe = p => ME >= 0 && p.side === 0 && p.k === ME;
     // O estilo de cada time (S.CO_STY do Treinador; no Jogo a Jogo, equilibrado): ctrl segura a bola e evita passe arriscado,
     // press sobe a marcação e dá mais bote, line é a altura da defesa, counter acelera depois de roubar, wide abre o time e cruza
-    const CUE_T = 2.2, CUE_N = { pressionar: 'PRESSIONAR', segurar: 'SEGURAR', lados: 'PELOS LADOS', recuar: 'RECUAR' };
+    const CUE_T = 3, CUE_N = { pressionar: 'PRESSIONAR', segurar: 'SEGURAR', lados: 'PELOS LADOS', recuar: 'RECUAR' };
     const stOf = x => ({ ctrl: x && x.ctrl !== undefined ? x.ctrl : 1, press: x && x.press !== undefined ? x.press : 0.35, line: x && x.line !== undefined ? x.line : 0.5, counter: x && x.counter !== undefined ? x.counter : 0.35, wide: x && x.wide !== undefined ? x.wide : 0.5 });
     // Mando de campo (o.home: 0 seu time, 1 o adversário, sem: campo neutro): nos primeiros 15 minutos quem joga em casa
     // sobe a linha e dá mais bote, empurrado pela torcida; o visitante se fecha um pouco. Só o jeito de jogar muda
@@ -2253,12 +2253,20 @@
           g.restore(); } }
       if (cue) { const age = (Date.now() - cue.t0) / 1000;
         if (age > CUE_T) cue = null; else { const me = T[cue.s].filter(q => q.r !== 'GK'), cx = me.reduce((u, q) => u + q.x, 0) / (me.length || 1), d = (X(cx + 1) > X(cx) ? 1 : -1) * (cue.s ? -1 : 1) * (cue.k === 'recuar' ? -1 : 1);
-          const u = 15 * k0, hh = 18 * k0, x0 = cl(X(cx), 60 * k0, W - 60 * k0), y0 = H / 2 - 8 * k0, al = Math.max(0, Math.min(1, age * 6, (CUE_T - age) * 3)), mv = Math.min(1, age * 2.5) * 5 * k0;
+          const u = 15 * k0, hh = 18 * k0, x0 = cl(X(cx), 60 * k0, W - 60 * k0), y0 = H / 2 - 8 * k0, al = Math.max(0, Math.min(1, age * 6, (CUE_T - age) * 3));
           g.save(); g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = 6.2 * k0; g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 5 * k0; g.shadowOffsetY = 2 * k0;
           const ln = (a, pts) => { g.globalAlpha = al * a; g.strokeStyle = '#F2C230'; g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke(); };
-          if (cue.k === 'segurar') [-1, 1].forEach(i => ln(1, [[x0 + i * 8 * k0, y0 - hh * 0.85], [x0 + i * 8 * k0, y0 + hh * 0.85]]));
-          else if (cue.k === 'lados') [-1, 1].forEach(i => ln(1, [[x0 - u * 0.9, y0 + i * (3 * k0 + mv * 0.6)], [x0, y0 + i * (3 * k0 + mv * 0.6 + u * 0.8)], [x0 + u * 0.9, y0 + i * (3 * k0 + mv * 0.6)]]));
-          else [0, 1, 2].forEach(i => { const xx = x0 + d * ((i - 1) * 18 * k0 - u / 2 + mv); ln(0.4 + i * 0.3, [[xx, y0 - hh], [xx + d * u, y0], [xx, y0 + hh]]); });
+          // Silvio 18/11: o desenho se mexe mostrando o grito (relógio de verdade): pressionar avança em onda, recuar volta mais devagar,
+          // pelos lados abre para as laterais e recomeça, segurar respira com um ponteiro dando a volta
+          const ms = age * 1000;
+          if (cue.k === 'segurar') { const b = 0.5 - 0.5 * Math.cos(ms / 1400 * Math.PI * 2), sc = 1 + b * 0.12;
+            [-1, 1].forEach(i => ln(0.65 + 0.35 * b, [[x0 + i * 8 * k0, y0 - hh * 0.85 * sc], [x0 + i * 8 * k0, y0 + hh * 0.85 * sc]]));
+            g.globalAlpha = al * 0.9; g.lineWidth = 3 * k0; g.beginPath(); g.arc(x0, y0, hh * 1.35, -Math.PI / 2, -Math.PI / 2 + age / CUE_T * Math.PI * 2); g.stroke(); }
+          else if (cue.k === 'lados') { const ph = (ms % 800) / 800, sd = q => [-1, 1].forEach(i => { const s = 3 * k0 + q * 26 * k0; ln(Math.min(1, q * 5) * (1 - q * 0.75), [[x0 - u * 0.9, y0 + i * s], [x0, y0 + i * (s + u * 0.8)], [x0 + u * 0.9, y0 + i * s]]); });
+            sd(ph); if (ms > 400) sd((ph + 0.5) % 1); }
+          else { const per = cue.k === 'recuar' ? 900 : 600, ph = (ms % per) / per;
+            [0, 1, 2].forEach(i => { const p = ((ph * 3 - (d > 0 ? i : 2 - i)) % 3 + 3) % 3 / 3, xx = x0 + d * ((i - 1) * 18 * k0 - u / 2 + p * 14 * k0);
+              ln(0.35 + 0.65 * (1 - Math.abs(p - 0.5) * 2), [[xx, y0 - hh], [xx + d * u, y0], [xx, y0 + hh]]); }); }
           // Silvio 13/11: nada de palavra no campo; só as setas do grito
           g.restore(); } }
       if (refFx) {
