@@ -832,14 +832,16 @@
       let hh = 0, ha = 0; hidden.forEach(e => { if (e.t === 'gol') { if (homeGoal(e)) hh++; else ha++; } });
       if (!$('lv-score')) return; // a tela do jogo já saiu (lance atrasado do campinho ou relógio ainda agendado)
       $('lv-score').innerHTML = (m.gh - hh) + ' <i>x</i> ' + (m.ga - ha);
-      $('lv-clock').innerHTML = '<i></i>' + S.coClock(m);
+      // Acréscimo fica no placar até acabar o tempo (Silvio, 18/11: "se eu não vejo, não sei até que minuto o jogo vai")
+      const acr = m.ev.find(e => e.t === 'acrescimo' && e.m === m.min && !hidden.has(e) && !(m.min === 45 && m.half));
+      $('lv-clock').innerHTML = '<i></i>' + S.coClock(m) + (acr ? '<u class="lv-add">+' + acr.p + '</u>' : '');
       const ps = S.coPoss(m), pu = m.home ? ps : 1 - ps, sh = m.sh || { us: 0, them: 0 }, ot = m.ot || { us: 0, them: 0 };
       const hs = m.home ? [sh.us, sh.them] : [sh.them, sh.us], ho = m.home ? [ot.us, ot.them] : [ot.them, ot.us];
       $('lv-sh').textContent = hs[0] + ' · ' + hs[1]; $('lv-ot').textContent = ho[0] + ' · ' + ho[1];
       // Cartões embaixo do escudo e a linha de faltas, impedimentos e cartões (só o que o campinho já mostrou)
       const vis = t => m.ev.filter(e => e.t === t && !hidden.has(e)), cnt = (t, sd) => vis(t).filter(e => e.s === sd).length;
       const hsd = m.home ? 'us' : 'them', asd = m.home ? 'them' : 'us';
-      [['h', hsd], ['a', asd]].forEach(([k, sd]) => { const el = $('lv-cd-' + k); if (el) el.innerHTML = '<span class="co-yc"></span>'.repeat(Math.max(0, cnt('amarelo', sd) - vis('vermelho').filter(e => e.s === sd && e.how === '2am').length)) + '<span class="co-red"></span>'.repeat(cnt('vermelho', sd)); });
+      [['h', hsd], ['a', asd]].forEach(([k, sd]) => { const el = $('lv-cd-' + k); if (el) el.innerHTML = '<span class="co-yc"></span>'.repeat(Math.max(0, cnt('amarelo', sd) - vis('vermelho').filter(e => e.s === sd && e.how === '2am').length)) + '<span class="co-red"></span>'.repeat(cnt('vermelho', sd)); const rc = $('lv-rc-' + k); if (rc) rc.innerHTML = '<span></span>'.repeat(cnt('vermelho', sd)); }); // deitado: vermelho ao lado da sigla, como na TV
       const fo = m.fo || { us: 0, them: 0 }, of = m.of || { us: 0, them: 0 }, hv2 = o => (m.home ? [o.us, o.them] : [o.them, o.us]);
       const yH = cnt('amarelo', hsd) + vis('vermelho').filter(e => e.s === hsd && e.how === '2am').length, yA = cnt('amarelo', asd) + vis('vermelho').filter(e => e.s === asd && e.how === '2am').length;
       if ($('lv-cst')) $('lv-cst').innerHTML = '<span>Faltas<b>' + hv2(fo).join(' · ') + '</b></span><span>Impedim.<b>' + hv2(of).join(' · ') + '</b></span><span>Cartões<b><span class="co-yc"></span> ' + yH + ' · ' + yA + (cnt('vermelho', hsd) + cnt('vermelho', asd) ? ' <span class="co-red"></span> ' + cnt('vermelho', hsd) + ' · ' + cnt('vermelho', asd) : '') + '</b></span>';

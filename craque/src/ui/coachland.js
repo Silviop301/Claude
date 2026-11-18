@@ -832,7 +832,7 @@
     // disco da música no canto do campinho, só para quem deixou música no jogo ao vivo (Silvio, 12/11: "não tem nenhum controle sobre ela")
     const MU = window.CRAQUE_MUSIC, disc = MU && MU.live && U.discHtml ? U.discHtml('lv') : '';
     return '<div class="lv ldl"><div class="ldl-p">' + o.pitchHtml + disc +
-      '<div class="ldl-sb">' + kit(kH) + crestB(H.id, 'ldl-cr') + '<b class="ldl-tla">' + tla(H, tla(H) === tla(A)) + '</b><em id="lv-score">0 <i>x</i> 0</em><b class="ldl-tla">' + tla(A, tla(H) === tla(A)) + '</b>' + crestB(A.id, 'ldl-cr') + kit(kA) + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' + legTag(o.m) +
+      '<div class="ldl-sb">' + kit(kH) + crestB(H.id, 'ldl-cr') + '<b class="ldl-tla">' + tla(H, tla(H) === tla(A)) + '<i class="ldl-rc" id="lv-rc-h"></i></b><em id="lv-score">0 <i>x</i> 0</em><b class="ldl-tla">' + tla(A, tla(H) === tla(A)) + '<i class="ldl-rc" id="lv-rc-a"></i></b>' + crestB(A.id, 'ldl-cr') + kit(kA) + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' + legTag(o.m) +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
         '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
