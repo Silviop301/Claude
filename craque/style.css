@@ -9830,6 +9830,7 @@ body:has(> .tc-ov) > .pay-ty, body:has(.fdt) > .pay-ty { visibility: hidden; } /
 .aj-l.n6 { gap: 6px; } .aj-l.n6 .aj-sw, .aj-l.n6 .aj-lk { min-height: 44px; border-radius: 14px; } .aj-l.n6 .aj-sw b, .ld-st .aj-l.n6 button.aj-lk { font-size: 24px; }
 .aj-l.n7 { gap: 4px; } .aj-l.n7 .aj-sw, .aj-l.n7 .aj-lk { min-height: 40px; } .aj-l.n7 .aj-sw b, .ld-st .aj-l.n7 button.aj-lk { font-size: 21px; }
 .aj-l.n8 { gap: 3px; } .aj-l.n8 .aj-sw, .aj-l.n8 .aj-lk { min-height: 36px; } .aj-l.n8 .aj-sw b, .ld-st .aj-l.n8 button.aj-lk { font-size: 19px; } /* 8 linhas com o Replay do gol (18/11) */
+.aj-sw.aj-dis { opacity: .4; } /* Replay do gol com a comemoração desligada (não acontece) */
 
 /* Termos e reembolso deitados (2026-11-11, U.termosLand em ui/settings.js): 7 abas curtas no cartão creme, sem rolar,
    e o contato no painel carvão à direita. Abre pelo link da Loja no lugar da página termos.html */
