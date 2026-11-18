@@ -1153,8 +1153,17 @@
     // "Falta de  (Juazeirense)" quando o número não batia com ninguém da escalação de agora)
     let k = info.id != null ? s.xi.indexOf(info.id) : -1;
     if (k < 0 && info.num != null) k = s.xi.findIndex(id => { const p = id && s.squad.find(x => x.id === id); return p && p.num === info.num; });
-    const id = k >= 0 ? s.xi[k] : null, pos = k >= 0 ? slotsOf(s.form)[k] : '';
+    let id = k >= 0 ? s.xi[k] : null;
     const p = (id && s.squad.find(x => x.id === id)) || s.squad.find(x => (info.id != null && x.id === info.id) || (info.num != null && x.num === info.num));
+    // Expulso antes de a troca acontecer (Silvio 18/11: "1 foi expulso mas no campinho estão os 11"): quem sai joga até a
+    // bola parar, então o vermelho pode pegar quem já saiu da escalação. A troca não acontece: quem ia entrar volta para
+    // o banco, a troca é devolvida e a vaga fica vazia (o time fica com 10, como no campo)
+    let undo = null;
+    if (t === 'vermelho' && k < 0 && p && s.swap && s.swap[p.id]) {
+      const w = s.swap[p.id], j = s.xi.indexOf(w.i);
+      if (j >= 0) { k = j; id = p.id; undo = w; }
+    }
+    const pos = k >= 0 ? slotsOf(s.form)[k] : '';
     const e = { m: m.min, t, s: sd, p: p ? p.n : '', pos, b11: 1 }; if (m.st) e.st = m.st; if (info.pen) e.pen = 1;
     if (t === 'impedimento') cnt('of');
     else {
@@ -1164,6 +1173,11 @@
         const bk = id && s.bk[id]; e.how = info.how === '2am' || bk ? '2am' : 'direto';
         if (e.how === '2am') { cnt('yc'); if (m.ycAdd) m.ycAdd = m.ycAdd.filter(x => x !== id); }
         cnt('rc'); if (k >= 0) s.xi[k] = null; s.red++; if (s.mine && p) p.sus = 2;
+        if (undo) {
+          delete s.swap[p.id]; s.bench = s.bench.concat([undo.i]); if (!undo.f) s.subs++;
+          const q = byId(s.squad)[undo.i];
+          for (let x = m.ev.length - 1; x >= 0; x--) { const e0 = m.ev[x]; if (e0.t === 'troca' && e0.s === sd && e0.p === last(p.n) && (!q || e0.q === last(q.n))) { m.ev.splice(x, 1); break; } }
+        }
         if (s.mine && p) m.refStop = { t: 'vermelho', p: p.n, how: e.how, id };
       }
     }
@@ -1434,6 +1448,7 @@
     if ((!free && (s.subs <= 0 || !winOk(s, key))) || !s.bench.length) { s.xi[k] = null; return; }
     const m = byId(s.squad);
     const inn = s.bench.slice().sort((a, b) => S.coSlotVal(m[b], s.form, k) - S.coSlotVal(m[a], s.form, k))[0];
+    const was = s.xi[k]; if (was) (s.swap = s.swap || {})[was] = { i: inn, f: !!free };
     s.bench = s.bench.filter(x => x !== inn); s.xi[k] = inn; if (!free) { s.subs--; winUse(s, key); }
   }
   // Troca o cansado só se quem está no banco rende mais naquela vaga agora
@@ -1507,7 +1522,7 @@
     const s = m.us, k = s.xi.indexOf(outId), free = S.coSubFree(m, outId); key = key || 'm' + m.min;
     if ((!free && (s.subs <= 0 || !winOk(s, key))) || k < 0 || !s.bench.includes(inId)) return false;
     s.xi[k] = inId; s.bench = s.bench.filter(x => x !== inId); if (!free) { s.subs--; winUse(s, key); }
-    s.gone = (s.gone || []).concat([outId]);
+    s.gone = (s.gone || []).concat([outId]); (s.swap = s.swap || {})[outId] = { i: inId, f: free };
     return true;
   };
   // Muda formação ou estilo no meio do jogo: os mesmos jogadores redistribuídos pelo auxiliar nas vagas novas
