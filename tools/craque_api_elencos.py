@@ -18,7 +18,7 @@ Tudo que vem da API fica em tools/api-football/ (teams_<país>.json, ids.json, s
 gastar duas vezes a mesma chamada; os da ESPN em tools/espn/. No gerar, a ESPN vale antes da API-Football.
 Clube sem elenco baixado continua com o elenco sorteado.
 """
-import json, os, sys, time, unicodedata, re, subprocess, urllib.request, urllib.parse
+import hashlib, json, os, sys, time, unicodedata, re, subprocess, urllib.request, urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIR = os.path.join(ROOT, 'tools', 'api-football')
@@ -330,11 +330,18 @@ def cmd_gerar():
     for cid, rows in squads().items():
         defs = [r for r in rows if r[3] == 'DEF']
         # Defensores: os de número de lateral viram LAT; completa até ~40% laterais pelos mais novos sem número de zagueiro
+        # (2026-11-18) quem começou jogos na ESPN vai pela posição de verdade (LB/RB x CD: Rüdiger era LD pelo número)
+        lin = load(os.path.join(EDIR, 'lados.json'), {})
+        fixo = set()
         for r in defs:
-            r[3] = 'LAT' if r[4] in LAT_NUM else 'ZAG'
+            c = lin.get(r[0], [0] * 8) + [0] * 8
+            if c[6] + c[7] >= 1:
+                r[3] = 'LAT' if c[7] > c[6] else 'ZAG'; fixo.add(r[0])
+            else:
+                r[3] = 'LAT' if r[4] in LAT_NUM else 'ZAG'
         want = round(len(defs) * 0.42)
         lat = [r for r in defs if r[3] == 'LAT']
-        for r in sorted([r for r in defs if r[3] == 'ZAG' and r[4] not in (3, 4, 14, 15, 33, 44)], key=lambda r: r[2]):
+        for r in sorted([r for r in defs if r[3] == 'ZAG' and r[0] not in fixo and r[4] not in (3, 4, 14, 15, 33, 44)], key=lambda r: r[2]):
             if len(lat) >= want:
                 break
             r[3] = 'LAT'; lat.append(r)
@@ -352,6 +359,62 @@ def cmd_gerar():
     ids = {r[0] for rows in out.values() for r in rows}
     ref = {k: v for k, v in load(os.path.join(ROOT, 'tools', 'ea', 'ref.json'), {}).items() if k in ids or (k[0] == '#' and k[1:] in out)}
     side = {k: v for k, v in load(os.path.join(ROOT, 'tools', 'ea', 'lado.json'), {}).items() if k in ids}
+    # Lado e ponta pelas escalações da ESPN (tools/craque_espn_lados.py, 2026-11-18): o EA não tem Brasil. O EA vale antes;
+    # quem não tem nenhum dos dois ganha, por clube, o que falta para ter 1 LE, 1 LD, 1 ponta de cada lado e 1 centroavante
+    lin = load(os.path.join(EDIR, 'lados.json'), {})
+    def lado_lin(c):
+        e, d = c[0], c[1]
+        return None if not (e or d) else 'E' if e >= 2 * d else 'D' if d >= 2 * e else 'A'
+    hs = lambda k: int(hashlib.md5(k.encode()).hexdigest()[:8], 16)
+    pt, vol = set(), set()
+    for cid, rows in out.items():
+        lats = [r for r in rows if r[3] == 'LAT']
+        for r in lats:
+            if r[0] not in side and lado_lin(lin.get(r[0], [0] * 4)):
+                side[r[0]] = lado_lin(lin[r[0]])
+        for want in ('E', 'D'):
+            if not any(side.get(r[0]) in (want, 'A') for r in lats):
+                free = [r for r in lats if r[0] not in side]
+                if free:
+                    side[max(free, key=lambda r: r[5])[0]] = want
+        for r in lats:
+            side.setdefault(r[0], 'EDEDA'[hs(r[0]) % 5])
+        atas = [r for r in rows if r[3] == 'ATA']
+        known = {}
+        for r in atas:
+            c = lin.get(r[0], [0] * 4)
+            if c[2] or c[3]:
+                known[r[0]] = c[2] > c[3]
+                if known[r[0]] and r[0] not in side and lado_lin(c):
+                    side[r[0]] = lado_lin(c)
+        free = sorted([r for r in atas if r[0] not in known], key=lambda r: -r[5])
+        if not any(v is False for v in known.values()) and free:
+            known[free.pop(0)[0]] = False
+        for want in ('E', 'D'):
+            cand = [r for r in free if side.get(r[0], want) in (want, 'A')]
+            if not any(known.get(r[0]) and side.get(r[0]) in (want, 'A') for r in atas) and cand:
+                r = cand[0]; free.remove(r); known[r[0]] = True; side.setdefault(r[0], want)
+        for r in free:
+            known[r[0]] = hs(r[0] + 'p') % 100 < 50
+        for r in atas:
+            if known[r[0]]:
+                pt.add(r[0]); side.setdefault(r[0], 'ED'[hs(r[0]) % 2])
+            else:
+                side.setdefault(r[0], 'A')
+        # Meio: rótulo VOL ou MEI (só o nome na tela; no motor segue MEI). Pela ESPN; sem dado, completa até 2 volantes e 2 meias
+        meis = [r for r in rows if r[3] == 'MEI']
+        km = {}
+        for r in meis:
+            c = lin.get(r[0], [0] * 6) + [0] * 2
+            if c[4] or c[5]:
+                km[r[0]] = c[4] > c[5]
+        free = sorted([r for r in meis if r[0] not in km], key=lambda r: -r[5])
+        for want in (True, False, True, False):
+            if sum(1 for v in km.values() if v == want) < 2 and free:
+                km[free.pop(0)[0]] = want
+        for r in free:
+            km[r[0]] = hs(r[0] + 'v') % 100 < 45
+        vol |= {k for k, v in km.items() if v}
     # Nacionalidade de quem é de fora do país do clube (ESPN); os outros são do país do clube (o jogo deduz)
     cty = {c[0]: PAIS_ISO.get(c[4]) for c in clubs(True)}
     nat = {}
@@ -371,9 +434,11 @@ def cmd_gerar():
           '// A força é calculada pelo jogo (coach.js): quem mais começa jogando fica com a maior; ref = geral − força do clube\n'
           '// pela nota do EA FC (tools/craque_notas_ea.py), "#clube" = teto de quem não está na base; side = lado (E, D, A) pela posição do EA FC.\n'
           '// nat = nacionalidade (código ISO; gb-eng etc.) de quem é de fora do país do clube; os outros são do país do clube.\n'
-          '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s, ref: %s, side: %s, nat: %s };\n'
+          '// pt = atacantes que jogam de ponta (escalações da ESPN, tools/craque_espn_lados.py); os outros atacantes são centroavantes.\n'
+          '// vol = meias que jogam de volante (só o nome VOL na tela); os outros meias são MEI.\n'
+          '(function (root) {\n  root.CRAQUE_REAL = { t: %d, clubs: %s, ref: %s, side: %s, pt: %s, vol: %s, nat: %s };\n'
           "  if (typeof module !== 'undefined') module.exports = root.CRAQUE_REAL;\n"
-          "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')), json.dumps(ref, separators=(',', ':')), json.dumps(side, separators=(',', ':')), json.dumps(nat, separators=(',', ':')))
+          "})(typeof window !== 'undefined' ? window : globalThis);\n") % (int(time.time()), json.dumps(out, ensure_ascii=False, separators=(',', ':')), json.dumps(ref, separators=(',', ':')), json.dumps(side, separators=(',', ':')), json.dumps(sorted(pt), separators=(',', ':')), json.dumps(sorted(vol), separators=(',', ':')), json.dumps(nat, separators=(',', ':')))
     with open(OUT, 'w') as f:
         f.write(js)
     print('%s: %d clubes, %d jogadores, %.1f KB' % (os.path.relpath(OUT, ROOT), len(out), tot, len(js) / 1024))

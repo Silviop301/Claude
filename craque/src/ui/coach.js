@@ -277,7 +277,7 @@
         (x.prem ? row('Prêmios', x.prem, big) : '') + (x.vend ? row('Vendas', x.vend, big) : '') + row('Salários', x.sal, big, true) + row('Contratações', x.comp, big, true) +
         '<i class="cf-ln"></i><div class="cf-li cf-tot"><span>Saldo até agora</span><b class="' + (saldo >= 0 ? 'up' : 'dn') + '">' + sgn(saldo) + '</b></div>',
       seg: S.coFinNext(co).map(n => '<div class="cf-li"><span>' + esc(n.txt) + '</span><b>' + (n.aprox ? '~ ' : '') + mi(n.v) + '</b></div>').join('') || '<p class="cf-empty">A temporada acabou.</p>',
-      sal: co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 5).map(p => '<div class="cf-pl"><span class="cf-pos">' + p.pos + '</span><span class="cf-pn"><b>' + esc(last(p.n) || p.n) + '</b><small>' + p.age + ' anos</small></span><b class="cf-ov">' + p.ovr + '</b><span class="cf-w">' + mi(p.wage) + '<small>até ' + (yr() + Math.max(0, p.ct - 1)) + '</small></span></div>').join(''),
+      sal: co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 5).map(p => '<div class="cf-pl"><span class="cf-pos">' + S.coPosAb(p) + '</span><span class="cf-pn"><b>' + esc(last(p.n) || p.n) + '</b><small>' + p.age + ' anos</small></span><b class="cf-ov">' + p.ovr + '</b><span class="cf-w">' + mi(p.wage) + '<small>até ' + (yr() + Math.max(0, p.ct - 1)) + '</small></span></div>').join(''),
     };
     const nx = S.coNext(co), vs = nx && !nx.bye && club(nx.vs), pr = finPres(f);
     render(U.modeHead({ mode: 'co', nav: 'back', id: 'b-cf-back', label: 'Voltar ao clube', title: 'Finanças', sub: esc(club(co.club).short || club(co.club).name) + ' · ' + yr() + (ss ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) + ' de ' + ss.rounds.length : '') }) +
@@ -524,7 +524,7 @@
       const note = p => p.out ? 'lesionado, ' + D.plural(p.out, 'jogo', 'jogos') : p.sus ? susTxt(p) :
         [p.age + ' anos', p === best ? 'melhor opção' : '', pend(p) ? 'pendurado' : '', p.en < 55 ? 'cansado' : '', p.mo < 45 ? 'chateado' : p.mo > 75 ? 'motivado' : ''].filter(Boolean).join(' · ');
       const row = p => '<button class="co-pl' + (p === best ? ' best' : '') + (avail(p) ? '' : ' dis') + '" data-sub="' + p.id + '"' + (avail(p) ? '' : ' disabled') + '>' +
-        '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
+        '<span class="co-pos">' + S.coPosAb(p) + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
         '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>';
       pop('<div class="co-pop-h"><b class="co-pop-ov">' + cur.ovr + '</b><span><b>' + esc(cur.n) + '</b><small>' + slot + ' · ' + cur.age + ' anos · energia ' + Math.round(cur.en) + '%</small></span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +
         '<div class="co-pop-b">' + (same.length ? '<div class="co-pop-l">Quem pode entrar no lugar dele</div>' + same.map(row).join('') : '<div class="co-pop-l">Ninguém da posição no elenco</div>') +
@@ -1045,7 +1045,7 @@
           (s.squad.some(p => (s.xi.includes(p.id) || s.bench.includes(p.id)) && cardOf(p).ic) ? '<p class="lv-lg"><u class="lv-cd y"></u>amarelo neste jogo<u class="lv-cd p"></u>pendurado</p>' : '') +
           '<div class="lv-vp" id="lv-vp"><div class="lv-vf"><i class="c"></i><i class="b t"></i><i class="b u"></i></div>' + s.xi.map(tok).join('') + '</div>' +
           '<div class="lv-bh"><small>Banco</small><small>' + (s.subs ? 'arraste para o campo' : 'sem trocas') + '</small></div>' +
-          '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + (p.num ? '<u>' + p.num + '</u>' : '') + p.pos + ' · ' + p.ovr + (cardOf(p).ic === 'p' ? '<span class="lv-cd p" title="pendurado"></span>' : '') + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
+          '<div class="lv-bench">' + (bench.length ? bench.map(p => '<button class="lv-bc' + (sel && sel.b === p.id ? ' sel' : '') + '" data-dbn="' + p.id + '"' + (s.subs ? '' : ' disabled') + '><small>' + (p.num ? '<u>' + p.num + '</u>' : '') + S.coPosAb(p) + ' · ' + p.ovr + (cardOf(p).ic === 'p' ? '<span class="lv-cd p" title="pendurado"></span>' : '') + '</small><b>' + esc(p.n) + '</b><i><em class="' + enCls(p.en) + '" style="width:' + Math.round(p.en) + '%"></em></i></button>').join('') : '<p class="co-tip">Ninguém no banco.</p>') + '</div>' +
           '<div class="lv-fb">' + (undo.length ? '<div class="lv-fb2"><button class="btn ghost" id="b-lv-undo">Desfazer</button><button class="btn" id="b-lv-back">Pronto</button></div>' : '<button class="btn" id="b-lv-back">Pronto</button>') + '</div>';
         $('b-lv-back').onclick = () => { sfx('tap'); back(st); };
         if (undo.length) $('b-lv-undo').onclick = () => { sfx('tap'); const u = undo.pop(); s.xi = u.xi; s.bench = u.bench; s.subs = u.subs; s.gone = u.gone; m.ev.length = u.ev; firstMove = u.fm; sel = null; draw(); };
@@ -1061,7 +1061,7 @@
         const best = s.subs ? same.find(avail) || other.find(avail) : null;
         const note = p => p.out ? 'lesionado' : p.sus ? susTxt(p) : [p === best ? 'sugestão' : '', m.us.bk && m.us.bk[p.id] ? 'com amarelo' : pend(p) ? 'pendurado' : '', p.age ? p.age + ' anos' : '', p.en < 55 ? 'cansado' : ''].filter(Boolean).join(' · ');
         const row = p => { const ok = s.subs && avail(p); return '<button class="co-pl' + (p === best ? ' best' : '') + (ok ? '' : ' dis') + '" data-lsub="' + p.id + '"' + (ok ? '' : ' disabled') + '>' +
-          '<span class="co-pos">' + p.pos + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
+          '<span class="co-pos">' + S.coPosAb(p) + '</span><span class="co-pn"><b>' + esc(p.n) + '</b><small>' + note(p) + '</small></span>' +
           '<span class="co-en ' + enCls(p.en) + '"><em style="width:' + Math.round(p.en) + '%"></em></span><b class="co-ov">' + p.ovr + '</b></button>'; };
         const tired = cur.out ? ' · machucado' : cur.en < 55 ? ' · cansado' : '';
         pop('<div class="co-pop-h"><b class="co-pop-ov">' + cur.ovr + '</b><span><b>' + esc(cur.n) + '</b><small>' + slot + ' · energia ' + Math.round(cur.en) + '%' + tired + '</small></span><button class="co-pop-x" data-pop-x aria-label="Fechar">' + XICO + '</button></div>' +

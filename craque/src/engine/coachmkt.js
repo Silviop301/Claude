@@ -225,7 +225,12 @@
     // GERAL (2026-11-14, no lugar de NÍVEL melhor/igual/pior): pelo meio da faixa que o olheiro viu
     const ovm = p => { const o = S.coMktOvr(co, p); return o ? o.mid : p.ovr; };
     return [
-      { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].map(x => ({ t: POS_NM[x], ok: p => p.pos === x }))) },
+      { k: 'pos', t: 'POSIÇÃO', o: [{ t: 'Qualquer' }].concat(['GOL', 'ZAG', 'LAT', 'LE', 'LD', 'MEI', 'VOL', 'MO', 'ATA', 'PE', 'PD', 'CA'].map(x => // lado e ponta (2026-11-18); quem joga dos dois lados entra nos dois
+        x === 'LE' || x === 'LD' ? { t: x === 'LE' ? 'Lateral esquerdo' : 'Lateral direito', ok: p => p.pos === 'LAT' && S.coSide(p) !== (x === 'LE' ? 'D' : 'E') }
+        : x === 'PE' || x === 'PD' ? { t: x === 'PE' ? 'Ponta esquerda' : 'Ponta direita', ok: p => S.coPonta(p) && S.coSide(p) !== (x === 'PE' ? 'D' : 'E') }
+        : x === 'CA' ? { t: 'Centroavante', ok: p => p.pos === 'ATA' && !S.coPonta(p) }
+        : x === 'VOL' || x === 'MO' ? { t: x === 'VOL' ? 'Volante' : 'Meia', ok: p => p.pos === 'MEI' && S.coVol(p) === (x === 'VOL') }
+        : { t: x === 'MEI' ? 'Meio-campo' : POS_NM[x], ok: p => p.pos === x })) },
       { k: 'niv', t: 'GERAL', o: [{ t: 'Qualquer' }, { t: 'Melhor que o titular', ok: p => lvl(p, 'melhor') }].concat([80, 75, 70, 65, 60].map(v => ({ t: v + ' ou mais', ok: p => ovm(p) >= v }))).concat([{ t: 'Até 59', ok: p => ovm(p) < 60 }]) },
       { k: 'ida', t: 'IDADE', o: [{ t: 'Qualquer' }, { t: 'Até 21', ok: p => p.age <= 21 }, { t: 'Até 25', ok: p => p.age <= 25 }, { t: 'Até 29', ok: p => p.age <= 29 }, { t: '30 ou mais', ok: p => p.age >= 30 }] },
       { k: 'pre', t: 'PREÇO ATÉ', o: [{ t: 'Qualquer' }, { t: brl(Math.max(100000, Math.round(verba / 2))), ok: p => S.coMktPrice(p) <= Math.max(100000, verba / 2) }, { t: brl(verba) + ' · verba', ok: p => S.coMktPrice(p) <= verba }, { t: brl(verba * 2), ok: p => S.coMktPrice(p) <= verba * 2 }] },
