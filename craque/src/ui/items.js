@@ -317,7 +317,8 @@
       // Histórico: as linhas dos dois aparelhos, sem repetir, da mais nova para a mais velha
       const seen = {}, log = [].concat((ca || {}).log || [], (cb || {}).log || []).filter(x => { const k = x && x.at + '|' + x.n + '|' + x.t; if (!x || seen[k]) return false; seen[k] = 1; return true; })
         .sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 60);
-      coins = coinSum(Object.assign({}, cn, { dv, once, rp, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }, Math.max(za, zb) ? { z: Math.max(za, zb) } : {}));
+      const z = Math.max(za, zb);
+      coins = coinSum(coinClean(Object.assign({}, cn, { dv, once, rp, log, clubs: Object.assign({}, (ca || {}).clubs, (cb || {}).clubs) }, z ? { z, oz: Object.assign({}, (ca || {}).oz, (cb || {}).oz) } : {})));
     }
     return Object.assign({}, newer, { own: Object.assign({}, a.own, b.own), news: Object.assign({}, a.news, b.news), days }, prof ? { prof } : {}, coins ? { coins } : {}, (a.ch || b.ch) && U.CHAMA ? { ch: U.CHAMA.merge(a.ch, b.ch) } : {});
   }
@@ -330,7 +331,9 @@
   const DEV = (() => { try { let d = localStorage.getItem('climbix-dev'); if (!d) { d = Math.random().toString(36).slice(2, 10); localStorage.setItem('climbix-dev', d); } return d; } catch (e) { return 'x'; } })();
   function coinNorm(c) {
     if (!c || typeof c.n !== 'number') return null;
-    if (c.v === 2 && c.dv) { c.once = c.once || {}; c.clubs = c.clubs || {}; c.rp = c.rp || {}; coinRepair(c); return c; }
+    // A nuvem (PHP) devolve objeto vazio como lista []: chave nova numa lista some ao gravar
+    const ob = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+    if (c.v === 2 && c.dv) { c.dv = ob(c.dv); c.once = ob(c.once); c.clubs = ob(c.clubs); c.rp = ob(c.rp); if (c.oz) c.oz = ob(c.oz); if (c.z) { coinClean(c); coinSum(c); } coinRepair(c); return c; }
     const got = Math.max(c.got || 0, c.n || 0), once = {};
     Object.keys(c.once || {}).forEach(k => { once[k] = 0; });
     return Object.assign(c, { v: 2, dv: { old: [got, Math.max(0, got - c.n)] }, once, clubs: c.clubs || {}, log: c.log || [] });
@@ -347,6 +350,18 @@
       c.rp[k] = n; c.once[k] = 0; hit = true; });
     if (hit) coinSum(c);
   }
+  // Carteira zerada (`z`, pay.php?a=zerar): só vale o que nasceu depois. Ganho e gasto por aparelho com a chave `<aparelho>.<z>`
+  // (`mine`), prêmio de uma vez listado em `oz`, time comprado e linha do histórico com hora depois do `z`. Assim um aparelho
+  // com a versão antiga (que junta pegando o maior de cada) não traz o saldo de antes de volta (2026-11-18, voltaram 627).
+  function coinClean(c) {
+    if (!c || !c.z) return c;
+    const sf = '.' + c.z, oz = c.oz = c.oz || {};
+    Object.keys(c.dv || {}).forEach(k => { if (k.slice(-sf.length) !== sf) delete c.dv[k]; });
+    Object.keys(c.once || {}).forEach(k => { if (!oz[k]) delete c.once[k]; });
+    Object.keys(c.clubs || {}).forEach(k => { if (!(c.clubs[k] > c.z)) delete c.clubs[k]; });
+    c.rp = {}; c.log = (c.log || []).filter(x => x && x.at > c.z);
+    return c;
+  }
   function coinSum(c) {
     let g = 0, sp = 0;
     Object.keys(c.dv).forEach(k => { g += c.dv[k][0] || 0; sp += c.dv[k][1] || 0; });
@@ -356,12 +371,13 @@
   }
   const wallet = () => { const o = get(), n0 = o.coins && o.coins.n; o.coins = coinNorm(o.coins) || coinSum({ v: 2, n: 0, got: 0, log: [], once: {}, clubs: {}, dv: {}, rp: {} }); if (n0 != null && n0 !== o.coins.n) put(); return o.coins; };
   const LOGN = 60; // histórico na loja (2026-11-11, Silvio: de onde vieram as moedas)
-  const mine = w => w.dv[DEV] || (w.dv[DEV] = [0, 0]);
+  const mine = w => { const k = DEV + (w.z ? '.' + w.z : ''); return w.dv[k] || (w.dv[k] = [0, 0]); };
+  const onceSet = (w, k, n) => { w.once[k] = n; if (w.z) (w.oz = w.oz || {})[k] = 1; };
   function coinAdd(list) {
     const w = wallet(); let tot = 0;
     [].concat(list || []).forEach(x => {
       const n = Math.round(x && x.n); if (!(n > 0)) return;
-      if (x.once) { if (w.once[x.once] != null) return; w.once[x.once] = n; } else mine(w)[0] += n;
+      if (x.once) { if (w.once[x.once] != null) return; onceSet(w, x.once, n); } else mine(w)[0] += n;
       tot += n; w.log = [{ n, t: x.t, at: Date.now() }].concat(w.log).slice(0, LOGN);
     });
     if (tot) { coinSum(w); put(); }
@@ -380,7 +396,7 @@
     const w = wallet(), tot = (paid || []).reduce((a, x) => a + (x.coins || 0), 0); let back = 0;
     (paid || []).forEach(x => { const k = 'pay-' + x.ref, n = Math.round(x.coins);
       if (!(n > 0) || w.got >= tot || w.once[k] || w.rp[k]) return;
-      w.once[k] = n; back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (recuperada)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
+      onceSet(w, k, n); back += n; coinSum(w); w.log = [{ n, t: 'Compra na loja (recuperada)', at: Date.now() }].concat(w.log).slice(0, LOGN); });
     if (back) put();
     return back;
   }

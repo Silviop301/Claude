@@ -262,6 +262,16 @@ if ($a === 'setpass') {
 if ($a === 'push') {
   $key = bySession($db, $in['token'] ?? '');
   if (!is_array($in['data'] ?? null)) out(['error' => 'bad'], 400);
+  // Conta zerada pelo admin (pay.php?a=zerar): aparelho com a versão antiga do jogo, ou que puxou antes do zerar e manda
+  // depois, devolveria a carteira de antes. Carteira sem `z` ou com `z` mais velho vira a vazia do zerar.
+  $q = $db->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'coin_resets'");
+  if ($q->fetchColumn() && is_array($in['data']['itens'] ?? null)) {
+    $q = $db->prepare('SELECT z FROM coin_resets WHERE user_key = ?'); $q->execute([$key]);
+    $z = (int)$q->fetchColumn();
+    $c = $in['data']['itens']['coins'] ?? null;
+    if ($z && (!is_array($c) || (int)($c['z'] ?? 0) < $z))
+      $in['data']['itens']['coins'] = ['v' => 2, 'n' => 0, 'got' => 0, 'log' => [], 'once' => new stdClass, 'oz' => new stdClass, 'clubs' => new stdClass, 'dv' => new stdClass, 'rp' => new stdClass, 'z' => $z];
+  }
   $data = json_encode($in['data'], JSON_UNESCAPED_UNICODE);
   if (strlen($data) > $MAX) out(['error' => 'too_big'], 413);
   $now = time();

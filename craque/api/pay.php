@@ -149,13 +149,17 @@ if ($a === 'zerar') {
     if (@file_put_contents($dir . '/' . $file, json_encode(['user' => $uk, 'at' => time(), 'save' => $sv, 'purchases' => $buys], JSON_UNESCAPED_UNICODE)) === false) throw new Exception('backup');
     @chmod($dir . '/' . $file, 0600);
     $data = $sv ? json_decode((string)$sv['data'], true) : null;
+    // A hora do zerar fica também no servidor: o push (account.php) troca carteira sem `z` ou mais velha pela vazia
+    $z = (int)round(microtime(true) * 1000);
+    $db->exec('CREATE TABLE IF NOT EXISTS coin_resets (user_key TEXT PRIMARY KEY, z INTEGER)');
+    $db->prepare('INSERT INTO coin_resets (user_key, z) VALUES (?, ?) ON CONFLICT(user_key) DO UPDATE SET z = excluded.z')->execute([$uk, $z]);
     $old = ['coins' => null, 'clubs' => []];
     if (is_array($data)) {
       $inv = $data['itens'] ?? null;
       if (is_array($inv)) {
         $c = $inv['coins'] ?? null;
         if (is_array($c)) $old = ['coins' => $c['n'] ?? null, 'clubs' => array_keys((array)($c['clubs'] ?? []))];
-        $inv['coins'] = ['v' => 2, 'n' => 0, 'got' => 0, 'log' => [], 'once' => new stdClass, 'clubs' => new stdClass, 'dv' => new stdClass, 'rp' => new stdClass, 'z' => (int)round(microtime(true) * 1000)];
+        $inv['coins'] = ['v' => 2, 'n' => 0, 'got' => 0, 'log' => [], 'once' => new stdClass, 'oz' => new stdClass, 'clubs' => new stdClass, 'dv' => new stdClass, 'rp' => new stdClass, 'z' => $z];
         $inv['at'] = (int)round(microtime(true) * 1000);
         $data['itens'] = $inv;
         $db->prepare('UPDATE saves SET data = ?, updated = ? WHERE user_key = ?')->execute([json_encode($data, JSON_UNESCAPED_UNICODE), time(), $uk]);
