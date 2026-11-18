@@ -279,7 +279,7 @@
   // Quem joga bem numa vaga: da posição, ou que sabe jogar ali (goleiro só no gol)
   const fitsSlot = (p, slot) => p.pos === slot || ((p.pos === 'GOL') === (slot === 'GOL') && S.coFit(p.pos, slot) >= 0.88);
   // Reserva no banco: anel de energia com o geral, nome e a posição na cor do setor; o primeiro de cada setor abre espaço
-  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + moAr(p, 'mo-bn') + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + p.pos + '</small></span></button>';
+  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + moAr(p, 'mo-bn') + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + S.coPosAb(p) + '</small></span></button>';
   // Com um titular escolhido o banco rola até o primeiro reserva que joga na vaga (o banco não cabe inteiro na tela)
   // Tocar num reserva redesenha a tela: o banco volta para onde estava (Silvio 16/11: "quero que o clique mantenha a
   // posição"); BENCH_X zera ao abrir a escalação ou a parada
@@ -293,7 +293,7 @@
   // Titular escolhido (Silvio 2026-11-10): ao lado dele, os reservas da mesma posição, do maior geral para o menor; o
   // banco segue embaixo para quem é de fora da posição, com o geral que ele teria na vaga (ovrAt, perde um pouco)
   // Lado do jogador no cartão do Elenco (Silvio 16/11): laterais, meias e atacantes; zagueiro e goleiro não têm
-  const sideTxt = p => (p.pos === 'GOL' || p.pos === 'ZAG' ? '' : ' · ' + ({ E: 'esquerda', D: 'direita', A: 'dois lados' })[S.coSide(p)]);
+  const sideTxt = p => (p.pos === 'GOL' || p.pos === 'ZAG' || p.pos === 'LAT' || p.pos === 'ATA' ? '' : ' · ' + ({ E: 'esquerda', D: 'direita', A: 'dois lados' })[S.coSide(p)]);
   const ovrAt = (p, slot, fm, fi) => S.coOvrAt(p, slot, fm, fi);
   // (2026-11-12, Silvio: "dois principais por função") cada reserva mostra os dois atributos de mais peso da posição,
   // verde ▲ se é melhor que o de quem sai e laranja ▼ se é pior; em cima, o nome e os números de quem sai (`out`).
@@ -704,7 +704,7 @@
         if (sub) { took.add(sub.id); fixes.push({ o: p, i: sub, at: i, slot: sl[i], tag: S.coSlotLbl(co.form, i), why: off ? 'improvisado' : Math.round(p.en) + '%' }); } });
       const p0 = probs[0];
       const aux = fixes.length ? '' : !p0 ? 'Time inteiro e cada um na sua posição. Pode ir.'
-        : p0.off ? 'O ' + esc(last(p0.p.n)) + ' é ' + c.posTxt[p0.p.pos].toLowerCase() + '. Ninguém da posição no banco.'
+        : p0.off ? 'O ' + esc(last(p0.p.n)) + ' é ' + S.coPosNm(p0.p).toLowerCase() + '. Ninguém da posição no banco.'
         : 'O ' + esc(last(p0.p.n)) + ' está com ' + Math.round(p0.p.en) + '% de energia. Não tem ninguém melhor para a vaga.';
       const nFix = fixes.length, fixLbl = nFix === 1 ? 'Uma troca' : nFix + ' trocas';
       // Com um titular escolhido acende no banco quem joga na vaga; com um reserva escolhido, as vagas em que ele joga
@@ -1339,8 +1339,8 @@
   function talkPop(p, log) {
     const c = C(), co = c.co, why = S.coTalkWhy(co, p);
     const fx = t => t.fx.map(f => '<em' + (f[0] ? ' class="' + f[0] + '"' : '') + '>' + (f[1] ? '<i>' + f[1] + '</i>' : '') + f[2] + '</em>').join('');
-    const body = (say, pick, was, d) => '<div class="cvj-h"><span class="cvj-d ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '"><b>' + p.ovr + '</b><em>' + p.pos + '</em></span>' +
-      '<span class="cvj-n"><b>' + esc(p.n) + '</b><small>' + c.posTxt[p.pos] + ' · ' + p.age + ' anos' + (why.tag ? '<em>' + why.tag + '</em>' : '') + '</small></span>' + cvjMo(p, was, d) +
+    const body = (say, pick, was, d) => '<div class="cvj-h"><span class="cvj-d ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '"><b>' + p.ovr + '</b><em>' + S.coPosAb(p) + '</em></span>' +
+      '<span class="cvj-n"><b>' + esc(p.n) + '</b><small>' + S.coPosNm(p) + ' · ' + p.age + ' anos' + (why.tag ? '<em>' + why.tag + '</em>' : '') + '</small></span>' + cvjMo(p, was, d) +
       (pick ? '' : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
       '<div class="cvj-say"><p>“' + esc(say) + '”</p></div>' +
       '<div class="cvj-ops">' + Object.keys(S.CO_TALK1).map(k => { const t = S.CO_TALK1[k];
@@ -1370,7 +1370,7 @@
     const jm = PV_MEDIA[hashS(co.club + '|' + co.season + '|' + (co.ss ? co.ss.i : 0)) % PV_MEDIA.length];
     const fx = o => o.tags.slice(0, 3).map(f => '<em' + (f[0] ? ' class="' + f[0] + '"' : '') + '>' + (f[1] ? '<i>' + f[1] + '</i>' : '') + esc(f[2]) + '</em>').join('');
     const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-' + String(jm[2]).padStart(2, '0') + '.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
-      : P ? '<span class="cvj-d ' + enRing(P.en) + '" style="--en:' + Math.round(P.en) + '"><b>' + P.ovr + '</b><em>' + P.pos + '</em></span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(P.n) + (P2 ? ' x ' + esc(P2.n) : '') + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
+      : P ? '<span class="cvj-d ' + enRing(P.en) + '" style="--en:' + Math.round(P.en) + '"><b>' + P.ovr + '</b><em>' + S.coPosAb(P) + '</em></span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(P.n) + (P2 ? ' x ' + esc(P2.n) : '') + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : '<span class="cvj-d jr pv-cr">' + crest(co.club, 'pv-crs') + '</span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(club(co.club).short || club(co.club).name) + '<em class="cl">' + esc(d.tag) + '</em></small></span>';
     // Depois da escolha (2026-11-18, Silvio: "culpei a arbitragem mas não vi o valor da multa"): os 3 cartões viram um só,
     // "Você escolheu", com o que aconteceu de verdade (S.coPvRes: multa e caixa em R$, energia em número, jogador pelo nome)
@@ -2079,7 +2079,7 @@
       return '<div class="mkw-f' + (v ? ' on' : '') + '">' + (v ? '<button class="mk-fx" data-mx="' + i + '" aria-label="limpar ' + x.t.toLowerCase() + '">' + x.t + '<i>×</i></button>' : '<small>' + x.t + '</small>') +
         '<button class="mk-ar" data-mf="' + i + '" data-d="-1" aria-label="' + x.t.toLowerCase() + ' anterior">' + MK_L + '</button><b>' + esc(t) + '</b><button class="mk-ar" data-mf="' + i + '" data-d="1" aria-label="' + x.t.toLowerCase() + ' seguinte">' + MK_R + '</button></div>'; };
     const row = (p, i) => { const o = S.coMktOvr(co, p), pr = S.coMktPrice(p);
-      return '<button class="mkw-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><b>' + natFlag(p) + esc(p.n) + obsTag(co, p) + '</b><i class="mkw-ps" data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span>' + p.age + '</span><span class="cl">' + mkClub(p, true) + '</span>' +
+      return '<button class="mkw-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><b>' + natFlag(p) + esc(p.n) + obsTag(co, p) + '</b><i class="mkw-ps" data-ln="' + lnOf(p.pos) + '">' + S.coPosAb(p) + '</i><span>' + p.age + '</span><span class="cl">' + mkClub(p, true) + '</span>' +
         '<em class="mk-ovr ' + (o ? o.vs : 'nr') + '">' + S.coMktOvrTxt(o) + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     const emptyOf = n => n > S.CO_MKT.max ? 'Filtre mais: com estes filtros são ' + plMil(n, 'jogador', 'jogadores') + '. A lista aparece com até ' + S.CO_MKT.max + '.' : n ? 'Aperte Enter para ver ' + (n > 1 ? 'os ' : 'o ') + plMil(n, 'jogador', 'jogadores') + '.' : 'Ninguém com estes filtros. Solte um deles.', empty = emptyOf(n);
     const help = 'Escolha os filtros à esquerda: com até ' + S.CO_MKT.max + ' jogadores a lista aparece ao lado. O geral aparece em faixa, pelo que o olheiro viu: cada relatório estreita a faixa e o completo mostra o número certo. Verde é melhor que o seu titular da posição; laranja, pior. A janela abre nas 3 primeiras rodadas e em 2 rodadas no meio do campeonato. O relatório do olheiro sai do caixa. Jogador sem clube você contrata a qualquer hora.';
@@ -2122,7 +2122,7 @@
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * 4, pg * 4 + 4); sel = Math.min(sel || 0, R.length - 1);
     const chips = F.map((x, i) => (m.f[i] ? '<span class="mk-chip">' + esc(x.o[m.f[i]].t.replace(' · verba', '')) + '</span>' : '')).join('') + (m.nm && m.nm.trim().length >= 3 ? '<span class="mk-chip">"' + esc(m.nm.trim()) + '"</span>' : '');
     const row = (p, i) => { const o = S.coMktOvr(co, p), pr = S.coMktPrice(p);
-      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i data-ln="' + lnOf(p.pos) + '">' + p.pos + '</i><span><b>' + natFlag(p) + esc(p.n) + obsTag(co, p) + '</b><small' + (o ? '' : ' class="nr"') + '>' + mkClub(p, true) + ' · ' + p.age + ' anos' + (o ? '' : ' · sem relatório') + '</small></span>' +
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-mr="' + i + '"><i data-ln="' + lnOf(p.pos) + '">' + S.coPosAb(p) + '</i><span><b>' + natFlag(p) + esc(p.n) + obsTag(co, p) + '</b><small' + (o ? '' : ' class="nr"') + '>' + mkClub(p, true) + ' · ' + p.age + ' anos' + (o ? '' : ' · sem relatório') + '</small></span>' +
         '<em class="mk-ovr ' + (o ? o.vs : 'nr') + '">' + S.coMktOvrTxt(o) + '</em><strong>' + (p.club ? c.brl(pr) : 'grátis') + '</strong></button>'; };
     show('<div class="mk mkr">' + mkHead('mkr-back', 'Resultado', U.D.plural(list.length, 'jogador', 'jogadores'), false, true) +
       '<div class="mk-chips">' + chips + '<span class="rs-gap"></span><button class="mk-mud" id="mkr-mud">Mudar</button></div>' +
@@ -2193,7 +2193,7 @@
     pg = Math.max(0, Math.min(pages - 1, pg || 0)); const R = list.slice(pg * PP, pg * PP + PP); sel = Math.max(0, Math.min(sel || 0, R.length - 1));
     const row = (o, i) => { const p = co.squad.find(x => x.id === o.id), bc = club(o.club);
       const note = o.ask ? 'à venda' : o.wish === 1 ? 'quer ir' : o.wish === 2 ? 'quer ficar' : '';
-      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-or="' + i + '"><i>' + p.pos + '</i><span><b><span class="nw-n">' + esc(p.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b>' +
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-or="' + i + '"><i>' + S.coPosAb(p) + '</i><span><b><span class="nw-n">' + esc(p.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b>' +
         '<small>' + crest(o.club, 'nw-cr') + '<span class="nw-c">' + esc((bc.short || bc.name).replace(/^Red Bull /, '')) + '</span><s>·</s><span class="nw-c">' + ((co.xi || []).includes(p.id) ? 'titular' : 'reserva') + ' · geral ' + p.ovr + '</span></small></span>' +
         '<div class="nw-tc"><strong>' + brlS(c, o.v) + '</strong><em class="nw-tag f">' + (o.pay ? (o.pay + 1) + 'X' : 'À VISTA') + '</em></div></button>'; };
     const none = win.open ? 'Nenhuma proposta agora. Quem você põe à venda no Elenco recebe mais.' : win.next ? 'Nenhuma proposta. Elas chegam com a janela, na rodada ' + win.next + '.' : 'Nenhuma proposta. A janela já fechou.';
@@ -2252,7 +2252,7 @@
     const rumNm = id => esc((club(id).short || club(id).name).replace(/^Red Bull /, ''));
     const rumRow = rums.length ? '<div class="mkf-rm"><span>' + (rums.length > 1 ? 'Também querem' : 'Também quer') + '</span><b>' + rums.map(x => crest(x.to, 'nw-cr')).join('') + (rums.length === 1 ? '<i>' + rumNm(rums[0].to) + '</i>' : '') + '</b></div>' : '';
     const repC = S.coMktRepCost(co, p), repNo = n < S.CO_MKT.reps && (S.coFin(co).caixa || 0) < repC, repOff = n >= S.CO_MKT.reps || repNo;
-    show('<div class="mk mkf' + (rumRow ? ' rm' : '') + '">' + mkHead('mkf-back', esc(p.n), S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
+    show('<div class="mk mkf' + (rumRow ? ' rm' : '') + '">' + mkHead('mkf-back', esc(p.n), S.coPosNm(p) + ' · ' + p.age + ' anos · ' + mkClub(p), false, true) +
       (fichaAt ? fichaAttrs(co, p, n) : '<div class="mk-k mkf-cmp"><span class="mkf-t"><small>CONTRA O SEU ' + (S.CO_POS_NM[p.pos] || '').toUpperCase() + ' TITULAR</small>' + (b ? '<span class="mkf-ovw"><i class="mkf-ov"><small>GERAL</small>' + S.coMktOvrTxt(S.coMktOvr(co, p)) + '</i>' + '<b class="' + word + '">' + word + '<small' + (S.coMktOld(co, p) ? ' class="old">desatualizado' : '>' + CERT[n]) + '</small></b></span>' : '<b class="nr">sem relatório</b>') + '</span>' +
         '<span class="mkf-sc"><i></i>' + band + '<em></em><strong>' + esc(st0 ? last(st0.n) : 'titular') + '</strong></span><span class="mkf-w"><span>pior</span><span>igual</span><span>melhor</span></span></div>' +
       '<div class="mkf-g"><div class="mk-k"><small>POTENCIAL</small><b>' + (pot ? pot[0] : 'Peça um relatório') + '</b>' + (pot ? '<span class="mkf-dd">' + [1, 2, 3, 4].map(k => '<i class="' + (k <= pot[1] ? 'on' : '') + '"></i>').join('') + '</span>' : '<span class="mkf-nr">o olheiro ainda não viu</span>') + '</div>' +
@@ -2339,11 +2339,11 @@
       !w.open ? '<button class="tm-go off" id="mkp-go" disabled>Janela fechada</button>' : after < 0 ? '<button class="tm-go off" id="mkp-go" disabled>Sem verba</button>' :
       !tq && co.squad.length >= M.maxSquad ? '<button class="tm-go off" id="mkp-go" disabled>Elenco cheio</button>' : '<button class="tm-go" id="mkp-go">Enviar proposta</button>';
     const seg = (on, t, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + t + '</button>';
-    show('<div class="mk mkp nt">' + mkHead('mkp-back', 'Proposta', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · ' + cn) + // sem abas: só existe compra na 1.0 (empréstimo "em breve" saiu)
+    show('<div class="mk mkp nt">' + mkHead('mkp-back', 'Proposta', esc(p.n) + ' · ' + S.coPosNm(p) + ' · ' + cn) + // sem abas: só existe compra na 1.0 (empréstimo "em breve" saiu)
       '<div class="mkp-l"><div class="mk-k mkp-v"><small>VALOR DA PROPOSTA</small><span class="mkp-row"><button class="mk-ar big" data-pv="-1" aria-label="Menos"' + (done ? ' disabled' : '') + '>' + MK_L + '</button><b>' + c.brl(o.v) + '</b><button class="mk-ar big" data-pv="1" aria-label="Mais"' + (done ? ' disabled' : '') + '>' + MK_R + '</button></span>' +
         mkRuler(rg, o.v, ['Baixa', 'Justa', 'Alta'].map((t, i) => t + ' ' + c.mi(cuts[i])), cuts, 'pc', done) + '</div>' +
         '<div class="mkp-g"><div class="mk-k"><small>PAGAMENTO</small><span class="mkp-seg">' + ['À vista', '2x', '3x'].map((t, i) => seg(o.pay === i, t, 'data-pp="' + i + '"' + (done ? ' disabled' : ''))).join('') + '</span></div>' +
-          '<div class="mk-k"><small>JOGADOR NA TROCA</small><span class="mkp-tr"><button class="mk-ar" data-pt="-1" aria-label="Anterior"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_L + '</button><b class="' + (tq ? '' : 'off') + '">' + (tq ? esc(last(tq.n)) + ' · ' + tq.pos + '<small><u>' + tq.ovr + '</u> · ' + tq.age + ' anos · ' + c.brl(S.coValue(tq)) + '</small>' : TL.length ? 'Ninguém' : 'Sem reservas') + '</b><button class="mk-ar" data-pt="1" aria-label="Próximo"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_R + '</button></span></div></div></div>' +
+          '<div class="mk-k"><small>JOGADOR NA TROCA</small><span class="mkp-tr"><button class="mk-ar" data-pt="-1" aria-label="Anterior"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_L + '</button><b class="' + (tq ? '' : 'off') + '">' + (tq ? esc(last(tq.n)) + ' · ' + S.coPosAb(tq) + '<small><u>' + tq.ovr + '</u> · ' + tq.age + ' anos · ' + c.brl(S.coValue(tq)) + '</small>' : TL.length ? 'Ninguém' : 'Sem reservas') + '</b><button class="mk-ar" data-pt="1" aria-label="Próximo"' + (done || !TL.length ? ' disabled' : '') + '>' + MK_R + '</button></span></div></div></div>' +
       '<div class="mk-side"><div class="mk-k mkp-pr"><small>PRESIDENTE · ' + pres.t.toUpperCase() + '</small><span class="mkp-md">' + moodHtml() + '</span><span class="mkp-pat">Paciência' + mkDots(neg.pat, M.pat) + '</span></div>' +
         '<div class="mk-k mkf-li' + (over && !done ? ' o3' : '') + '"><div><span>' + (o.pay ? 'Agora · ' + (o.pay + 1) + 'x' : 'Paga agora') + '</span><b class="mkp-now">' + c.brl(now) + '</b></div><div><span>Verba depois</span><b class="mkp-af ' + (after < 0 ? 'dn' : 'up') + '">' + (after < 0 ? '− ' + c.brl(-after) : c.brl(after)) + '</b></div>' +
           (over && !done ? '<div class="mkp-ov"><span>Perde na troca</span><b class="dn">' + c.brl(over) + '</b></div>' : '') + '</div>' +
@@ -2470,7 +2470,7 @@
       : '<div class="rcs-li"><span>Ele aceita</span><b>' + wt(wa.w) + '/rodada · ' + (own ? '+' : '') + yt(wa.y) + ' · ' + R[wa.role].t + '</b></div>';
     const b1 = end ? '<button class="hl-btn gold" id="rcs-1">' + (own ? 'Ver elenco' : 'Mercado') + '</button>'
       : over ? '<button class="hl-btn gold off" id="rcs-1" disabled>Passa do teto</button>' : '<button class="hl-btn gold" id="rcs-1">Fechar por ' + wt(wa.w) + '</button>';
-    pop('<div class="cvj-h"><span class="cvj-d ' + enRing(en) + '" style="--en:' + en + '"><b>' + p.ovr + '</b><em>' + p.pos + '</em></span>' +
+    pop('<div class="cvj-h"><span class="cvj-d ' + enRing(en) + '" style="--en:' + en + '"><b>' + p.ovr + '</b><em>' + S.coPosAb(p) + '</em></span>' +
       '<span class="cvj-n"><b>' + esc(p.n) + '</b><small>' + (own ? 'Renovação' : 'Empresário') + '<em>' + (end ? 'Desistiu' : 'Recusou') + '</em></small></span>' + pips + '</div>' +
       '<div class="cvj-say"><p>“' + esc(say) + '”</p></div>' + li +
       '<span class="mkx-b rcs-b">' + b1 + '<button class="hl-btn dark" id="rcs-2">' + (end ? 'Fechar' : 'Ajustar') + '</button></span>', 'Resposta de ' + p.n, x => {
@@ -2493,7 +2493,7 @@
     const kb = ok(kt[0]) ? kt[0] : '#F4F1E8', ktr = ok(kt[1]) && kt[1].toLowerCase() !== kb.toLowerCase() ? kt[1] : kt.pat && ok(kt.pat[1]) ? kt.pat[1] : '#1D1D1F';
     const SIG = '<svg class="mkd-sg" viewBox="0 0 170 34" aria-hidden="true"><path pathLength="1" d="M4 24C14 2 20 4 18 20C17 30 26 8 32 12C38 16 30 28 40 20C48 13 46 6 54 16C60 24 64 10 72 14C80 18 76 26 88 18C98 11 104 22 116 16C128 10 140 22 166 12"/></svg>';
     pop('<div class="mkd vd"><div class="mkd-l"><small>CONTRATADO</small><span class="mkd-sh">' + shirtSvg(kb, ktr, c.last(np.n).toUpperCase().slice(0, 12), np.num || '') + '<i class="mkd-st" aria-hidden="true">FECHADO</i></span><b>' + crest(me.id, 'mkd-cr') + esc(me.short || me.name) + '</b><span>' + (fc ? 'chega do ' + esc(fc.short || fc.name) : 'estava sem clube') + '</span>' + SIG + '</div>' +
-      '<div class="mkd-r"><b>' + esc(np.n) + '</b><span class="mkd-ch"><i>' + S.CO_POS_NM[np.pos] + '</i><i class="g">' + (papel === 'Titular' ? 'Titular prometido' : papel) + '</i><i class="l">' + np.age + ' anos</i></span>' +
+      '<div class="mkd-r"><b>' + esc(np.n) + '</b><span class="mkd-ch"><i>' + S.coPosNm(np) + '</i><i class="g">' + (papel === 'Titular' ? 'Titular prometido' : papel) + '</i><i class="l">' + np.age + ' anos</i></span>' +
         '<div class="mkx-li"><div><span>Transferência</span><b>' + fee + '</b></div><div><span>Salário</span><b>' + c.brl(np.wage) + '/rodada</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + np.ct) + '</b></div></div>' +
         '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkd-time">Ver no time</button><button class="hl-btn dark" id="mkd-mk">Mercado</button></span></div></div>', 'Contratado', w => {
       w.querySelector('#mkd-time').onclick = () => { sfx('tap'); closePop(); time(); };
@@ -2534,7 +2534,7 @@
       if (mid && mid > o.v && mid < mine[1]) btns[2] = ['Meio termo<small>' + c.mi(mid) + '</small>', 'line', () => { const x = S.coMktSellTry(co, o, mid, o.pay, o.fut); c.save();
         if (x.k === 'ok') sfx('win'); back(); recebida(o, back, x); }];
     }
-    pop('<div class="mkr2"><div class="mkr2-p"><b class="mkr2-o">' + p.ovr + '</b><b>' + (p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</b><span>' + S.CO_POS_NM[p.pos] + ' · ' + p.age + ' anos</span>' +
+    pop('<div class="mkr2"><div class="mkr2-p"><b class="mkr2-o">' + p.ovr + '</b><b>' + (p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</b><span>' + S.coPosNm(p) + ' · ' + p.age + ' anos</span>' +
         ((co.xi || []).includes(p.id) ? '<span>titular</span>' : '<span>reserva</span>') + '<em class="' + wi[1] + '">' + wi[0] + '</em>' +
         (r && r.k === 'ok' ? '' : '<button class="mkr2-el" id="mkr2-el">Ver elenco</button>') + '</div>' +
       '<div class="mkr2-r"><div class="mkr2-h">' + crest(o.club, 'mkr2-cr') + '<span><small>' + eb + '</small><b>' + ti + '</b></span></div><p>' + line + '</p>' +
@@ -2561,7 +2561,7 @@
     const now = Math.ceil(t.v / (t.pay + 1) / 1000) * 1000;
     const hist = o.hist.slice(-4).map(h => '<i class="' + (h[0] === 'voce' ? 'me' : '') + '">' + (h[0] === 'voce' ? 'Você ' : 'Eles ') + c.mi(h[1]) + '</i>').join('<em>›</em>');
     const seg = (on, tx, attr) => '<button class="' + (on ? 'on' : '') + '" ' + attr + '>' + tx + '</button>';
-    show('<div class="mk mkp mkn">' + mkHead('mkn-back', 'Negociar', esc(p.n) + ' · ' + S.CO_POS_NM[p.pos] + ' · para o ' + bn) +
+    show('<div class="mk mkp mkn">' + mkHead('mkn-back', 'Negociar', esc(p.n) + ' · ' + S.coPosNm(p) + ' · para o ' + bn) +
       '<div class="mk-k mkn-h"><small>CONVERSA</small>' + hist + '</div>' +
       '<div class="mkp-l"><div class="mk-k mkp-v"><small>VOCÊ PEDE</small><span class="mkp-row"><button class="mk-ar big" data-nv="-1" aria-label="Menos">' + MK_L + '</button><b>' + c.brl(t.v) + '</b><button class="mk-ar big" data-nv="1" aria-label="Mais">' + MK_R + '</button></span>' +
         mkRuler(rg, t.v, ['O deles', 'Meio', 'Alto'].map((x, i) => x + ' ' + c.mi(cuts[i])), cuts, 'nc') + '</div>' +
@@ -2640,7 +2640,7 @@
       pop('<div class="mkx"><div class="mkx-h">' + crest(x.to, 'mkx-cr') + '<span><small>VOCÊ OBSERVAVA</small><b class="dn">Fechou com outro</b></span></div>' +
         '<p><b>' + esc(x.n) + '</b> assinou com o ' + esc(club(x.to).short || club(x.to).name) + ' por ' + c.brl(x.v) + '.</p>' +
         '<span class="mkx-b"><button class="hl-btn gold" id="lst-go">Procurar outro</button><button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Fechou com outro', w => {
-        w.querySelector('#lst-go').onclick = () => { sfx('tap'); closePop(); const m = S.coMkt(co), F = S.coMktFilters(co), i = F.findIndex(f => f.k === 'pos'), j = ['GOL', 'ZAG', 'LAT', 'MEI', 'ATA'].indexOf(x.pos) + 1;
+        w.querySelector('#lst-go').onclick = () => { sfx('tap'); closePop(); const m = S.coMkt(co), F = S.coMktFilters(co), i = F.findIndex(f => f.k === 'pos'), j = i >= 0 ? F[i].o.findIndex(o => o.t === (x.pos === 'MEI' ? 'Meio-campo' : S.CO_POS_NM[x.pos])) : -1;
           m.f = F.map(() => 0); if (i >= 0 && j > 0) m.f[i] = j; m.nm = ''; c.save(); mercado(); };
       }, 'hl-pop mkx-pop ech-pop'); }, 80);
     return true;
@@ -2654,7 +2654,7 @@
       return row('Bilheteria · ' + U.D.plural(homes, 'jogo', 'jogos') + ' em casa', x.bil) + row('Cota de TV', x.tv) + row('Patrocínio', x.pat) + (x.prem ? row('Prêmios', x.prem) : '') + (x.vend ? row('Vendas', x.vend) : '') +
         row('Salários', x.sal, 1) + row('Contratações', x.comp, 1) + '<div class="ldf-li tot"><span>Saldo até agora</span><b class="' + (saldo >= 0 ? 'up' : 'dn') + '">' + c.sgn(saldo) + '</b></div>'; } },
     { k: 'seg', t: 'A seguir', html: (c, co) => S.coFinNext(co).map(n => '<div class="ldf-li"><span>' + esc(n.txt) + '</span><b>' + (n.aprox ? '~ ' : '') + c.mi(n.v) + '</b></div>').join('') || '<p class="ld-none">A temporada acabou.</p>' },
-    { k: 'sal', t: 'Salários', html: (c, co) => co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 7).map(p => '<div class="ldf-li"><span><b>' + esc(p.n) + '</b> · ' + p.pos + ' · ' + p.age + ' anos</span><b>' + c.mi(p.wage) + '<small> até ' + (U.YEAR0 + co.season + p.ct) + '</small></b></div>').join('') },
+    { k: 'sal', t: 'Salários', html: (c, co) => co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 7).map(p => '<div class="ldf-li"><span><b>' + esc(p.n) + '</b> · ' + S.coPosAb(p) + ' · ' + p.age + ' anos</span><b>' + c.mi(p.wage) + '<small> até ' + (U.YEAR0 + co.season + p.ct) + '</small></b></div>').join('') },
   ];
   // Finanças enxuta (2026-11-09, quadro 20): 3 números grandes, abas Temporada/A seguir/Salários, à direita a situação
   // do caixa, o acordo, o patrocínio e o dourado Banco. A aba Decidir saiu (acordo e patrocínio ficam à direita)
@@ -2715,7 +2715,7 @@
     // quem, o clube, o último ano em que a revenda paga e o % (`co.fin.fut`, `futPay` em coachmkt.js)
     else if (tab === 'seg') rows = ((f.fut || []).map(x => '<div class="fn2-li fn2-cl"><span>Cláusula · ' + esc(x.n) + ' · ' + esc(club(x.club).short || club(x.club).name) + '<small> até ' + (U.YEAR0 + x.s + S.CO_MKT.futS) + '</small></span><b>' + x.pct + '% da revenda</b></div>').join('') +
       S.coFinNext(co).map(n => li(esc(n.txt), (n.aprox ? '~ ' : '') + c.mi(n.v))).join('')) || '<p class="fn2-none">A temporada acabou.</p>';
-    else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + p.pos + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
+    else rows = co.squad.slice().sort((a, b) => b.wage - a.wage).slice(0, 8).map(p => li(esc(p.n) + ' <small>' + S.coPosAb(p) + '</small>', c.mi(p.wage) + ' <small>até ' + (U.YEAR0 + co.season + p.ct) + '</small>')).join('');
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const head = '<div class="tm-h"><button class="tcr-back" id="ldf-back" aria-label="Voltar">' + BK + '</button><b>Finanças</b><small>' + esc(club(co.club).short || club(co.club).name) + ' · ' + (U.YEAR0 + co.season) + '</small><button class="ol2-q fn2-q' + (finTutSeen() ? '' : ' nv') + '" id="fn2-q" aria-label="Como funciona a tela de Finanças">?</button></div>';
     const kpi = '<div><small class="cx-l">' + CX_IC + 'CAIXA</small><b class="' + (f.caixa < 0 ? 'dn' : '') + '">' + c.brl(f.caixa) + '</b><span class="fn2-rt ' + (f.caixa < 0 ? 'red' : !R ? '' : R.net >= 0 ? 'up' : R.st === 'red' ? 'red' : 'warn') + '" title="rodada comum daqui para a frente">' + (f.caixa < 0 ? 'no vermelho' : ritmoTxt(c, R)) + '</span></div>' +
@@ -2942,7 +2942,7 @@
       const left = co.ss.rounds.length - co.ss.i, more = L.length > 3 ? L.length - 2 : 0, R = more ? L.slice(0, 2) : L;
       pop('<div class="mkx"><div class="mkx-h"><i class="mkx-fc">' + L.length + '</i><span><small>' + (left === 1 ? 'ÚLTIMA RODADA' : 'FALTAM ' + left + ' RODADAS') + '</small><b class="dn">' + (L.length > 1 ? 'Contratos no fim' : 'Contrato no fim') + '</b></span></div>' +
         '<p>' + (L.length > 1 ? 'Sem renovar, eles saem no fim do ano.' : 'Sem renovar, ele sai no fim do ano.') + '</p>' +
-        '<div class="mkx-li">' + R.map(p => '<div><span>' + (p.num ? p.num + ' ' : '') + esc(p.n) + ' · ' + p.pos + '</span><b>' + p.ovr + '</b></div>').join('') + (more ? '<div><span>e mais ' + more + ' titulares</span></div>' : '') + '</div>' +
+        '<div class="mkx-li">' + R.map(p => '<div><span>' + (p.num ? p.num + ' ' : '') + esc(p.n) + ' · ' + S.coPosAb(p) + '</span><b>' + p.ovr + '</b></div>').join('') + (more ? '<div><span>e mais ' + more + ' titulares</span></div>' : '') + '</div>' +
         '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="ctw-go">Ver elenco</button><button class="hl-btn line" id="ctw-no">Depois</button></span></div>', 'Contratos no fim', w => {
         w.querySelector('#ctw-go').onclick = () => { sfx('tap'); closePop(); elenco(CT_TAB[L[0].pos] || 0, L[0].id); };
         w.querySelector('#ctw-no').onclick = () => { sfx('tap'); closePop(); };
@@ -3004,7 +3004,7 @@
     const o = sel !== q.num ? own(sel) : null, last = c.last(q.n);
     const note = sel === q.num ? 'Este é o número de hoje. Escolha outro na grade.' : o ? 'O <em>' + sel + '</em> é do <em>' + esc(c.last(o.n)) + '</em>. Os dois trocam de número.' : 'Livre. Vale já no próximo jogo.';
     const btn = sel === q.num ? '<button class="hl-btn gold" id="nm-go" disabled>Escolha um número</button>' : '<button class="hl-btn gold" id="nm-go">' + (o ? 'Trocar com o ' + esc(c.last(o.n)) : 'Usar o ' + sel) + '</button>';
-    pop('<div class="nm-l"><div class="nm-h"><b>Número da camisa</b><small>' + esc(q.n) + ' · ' + c.posTxt[q.pos] + '</small></div><div class="nm-g">' + g + '</div>' +
+    pop('<div class="nm-l"><div class="nm-h"><b>Número da camisa</b><small>' + esc(q.n) + ' · ' + S.coPosNm(q) + '</small></div><div class="nm-g">' + g + '</div>' +
       '<div class="nm-lg"><span><u class="me"></u>o de hoje</span><span><u class="t"></u>de outro do elenco</span><span><u></u>livre</span></div></div>' +
       '<div class="nm-r"><div class="nm-shirt">' + shirtSvg(base, trim, last.toUpperCase().slice(0, 12), sel) + '</div><p class="nm-nt">' + note + '</p>' + btn + '</div>' +
       '<button class="ld-x nm-x" data-pop-x aria-label="Fechar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>', 'Número da camisa', w => {
@@ -3025,7 +3025,7 @@
     const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : p.prom ? ['y', 'promessa'] : null; // promessa = a chance prometida na conversa ainda vale
     const ovD = p => { const d = S.coOvrDelta(co, p); return d ? '<sup class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</sup>' : ''; }; // +1 / −2: o geral contra o fim da temporada passada
     const rows = L.map(p => { const t = tag(p);
-      return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + natFlag(p) + esc(p.n) + '</b><small>' + p.pos + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
+      return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + natFlag(p) + esc(p.n) + '</b><small>' + S.coPosAb(p) + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
         '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + moAr(p, 'mo-in') + ovD(p) + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
@@ -3039,7 +3039,7 @@
       const seg = '<div class="lde2-seg">' + ['Atributos', 'Situação'].map((t, i) => '<button data-ec="' + i + '"' + (i === elenco.ct ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + t + '</button>').join('') + '</div>';
       const grw = S.coTrainNow(co) && co.train.dv ? co.train.dv.filter(x => x[0] === q.id).map(x => x[1]) : []; // subiu no treino desta semana: verde
       const bars = '<div class="lde2-at">' + at.map((v, i) => '<div class="lde2-ar' + (grw.includes(i) ? ' gr' : i === hi ? ' top' : i === lo ? ' low' : '') + '"><span>' + S.CO_AT.names[ks[i]] + '</span><i><u style="width:' + v + '%"></u></i><b>' + v + '</b></div>').join('') + '</div>';
-      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? '<button class="lde2-nm" id="lde-num" aria-label="Trocar o número">' + shirtSvg('#F8F4EA', '#13201A') + q.num + NM_PEN + '</button>' : '') + esc(c.last(q.n)) + '</b><small>' + natFlag(q) + c.posTxt[q.pos] + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
+      card = '<div class="lde2-c' + (elenco.ct ? ' sit' + (hint ? ' hn' : '') : '') + '"><div class="lde2-ch"><b class="tm-ring ' + enRing(q.en) + '" style="--en:' + Math.round(q.en) + '">' + q.ovr + '</b><span><b>' + (q.num ? '<button class="lde2-nm" id="lde-num" aria-label="Trocar o número">' + shirtSvg('#F8F4EA', '#13201A') + q.num + NM_PEN + '</button>' : '') + esc(c.last(q.n)) + '</b><small>' + natFlag(q) + S.coPosNm(q) + sideTxt(q) + ' · ' + q.age + ' anos' + (S.coOvrDelta(co, q) ? ' · <em class="' + (S.coOvrDelta(co, q) > 0 ? 'up' : 'dn') + '">' + (S.coOvrDelta(co, q) > 0 ? '+' : '−') + Math.abs(S.coOvrDelta(co, q)) + ' no ano</em>' : '') + '</small></span></div>' + seg +
         (elenco.ct ? '<div class="lde2-st">' + st('ENERGIA', Math.round(q.en) + '%', q.en < 55) + st('POTENCIAL', q.pot) + st('MORAL', moT, moT === 'baixa') + st('SALÁRIO', c.mi(q.wage) + '/rodada') + '</div>' +
         '<div class="lde2-ct"><span><small>CONTRATO</small><b' + (q.ct <= 1 ? ' class="dn"' : '') + '>' + ctT(q.ct) + '</b></span></div>' +
         '<div class="lde2-act"><button class="lde2-ren" id="lde-ren" data-id="' + q.id + '"' + (renOk ? '' : ' disabled') + '>Renovar' + (renOk ? '' : '<small>no fim do contrato</small>') + '</button>' +
@@ -3463,7 +3463,7 @@
     show('<div class="fb2"><div class="tm-h"><button class="tcr-back" id="ldm-back" aria-label="Voltar">' + BKS + '</button><b>Batedores</b>' + segFB('bat') + '</div>' +
       '<div class="bt2-g">' + Object.keys(S.CO_TAKE).map(card).join('') + '</div>' +
       '<div class="fb2-c bt2-c"><b class="bt2-h">' + S.CO_TAKE[k] + '</b>' + cand.map(p => { const pos = T[k].indexOf(p.id);
-        return '<div class="bt2-r"><i' + (co.xi.includes(p.id) ? '' : ' class="bn" title="No banco"') + '>' + (p.num || p.ovr) + '</i><span><b>' + esc(last(p.n)) + '</b><small' + (p === best ? ' class="best">' + (k === 'cap' ? 'MELHOR' : tkTxt(p, k)) : '>' + (k === 'cap' ? p.pos + ' · ' : '') + tkTxt(p, k)) + '</small></span>' +
+        return '<div class="bt2-r"><i' + (co.xi.includes(p.id) ? '' : ' class="bn" title="No banco"') + '>' + (p.num || p.ovr) + '</i><span><b>' + esc(last(p.n)) + '</b><small' + (p === best ? ' class="best">' + (k === 'cap' ? 'MELHOR' : tkTxt(p, k)) : '>' + (k === 'cap' ? S.coPosAb(p) + ' · ' : '') + tkTxt(p, k)) + '</small></span>' +
           [0, 1, 2].map(j => '<button data-to="' + p.id + ':' + j + '"' + (pos === j ? ' class="on"' : '') + '>' + (j + 1) + 'º</button>').join('') + '</div>'; }).join('') + '</div>' +
       '<button class="tm-go fb2-go" id="ldm-ok">Pronto</button></div>', st => {
       bindSub(st, back);

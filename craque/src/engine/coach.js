@@ -301,17 +301,47 @@
   S.coSide = p => {
     if (!p) return 'A'; const R = REAL(), s = p.api && R && R.side && R.side[p.api]; if (s) return s;
     if (p.pos === 'GOL' || p.pos === 'ZAG') return 'A';
+    if (p.ld) return p.ld; // elenco gerado (Séries C e D, base): lado equilibrado por time, posto no genBase
     const h = hash(String(p.src || p.id) + '|lado') % 100;
     return p.pos === 'LAT' ? (h < 45 ? 'E' : h < 90 ? 'D' : 'A') : (h < 38 ? 'E' : h < 76 ? 'D' : 'A');
   };
+  // Ponta x centroavante (Silvio 2026-11-18: "pontas também", "o 4-3-3 vai pedir pontas?"). Real pelas escalações da ESPN
+  // (tools/craque_espn_lados.py: quem começa aberto no ataque; CRAQUE_REAL.pt), gerado no genBase (p.pt), o resto por
+  // sorteio preso a quem ele é. Na vaga de ponta (PE/PD) o centroavante rende CO.sideK, como o ponta do lado trocado.
+  // A posição segue ATA no motor (ponta x centroavante como posição de verdade fica para a 1.1)
+  let PT = null;
+  S.coPonta = p => {
+    if (!p || p.pos !== 'ATA') return false; const R = REAL();
+    if (p.api && R && R.pt) { if (!PT) PT = new Set(R.pt); if (PT.has(p.api)) return true; if (R.side && R.side[p.api]) return false; }
+    if (p.pt !== undefined) return !!p.pt;
+    return hash(String(p.src || p.id) + '|ponta') % 100 < 55;
+  };
   S.CO_SIDE_TXT = { E: 'esquerdo', D: 'direito', A: 'os dois lados' };
+  // Volante x meia (Silvio 2026-11-18: "vamos colocar VOL e MEI"): só o nome na tela, no motor segue MEI. Real pelas
+  // escalações da ESPN (CRAQUE_REAL.vol), gerado no genBase (p.vo), o resto por sorteio preso a quem ele é
+  let VO = null;
+  S.coVol = p => {
+    if (!p || p.pos !== 'MEI') return false; const R = REAL();
+    if (p.api && R && R.vol) { if (!VO) VO = new Set(R.vol); if (VO.has(p.api)) return true; if (R.clubs) return false; }
+    if (p.vo !== undefined) return !!p.vo;
+    return hash(String(p.src || p.id) + '|vol') % 100 < 45;
+  };
+  // Sigla e nome da posição com o lado (Silvio 2026-11-18: "trocar o nome pra LE e LD", em todo lugar; pontas PE/PD).
+  // Lateral dos dois lados fica LAT, ponta dos dois lados PON, centroavante ATA
+  S.coPosAb = p => !p ? '' : p.pos === 'LAT' ? ({ E: 'LE', D: 'LD' })[S.coSide(p)] || 'LAT'
+    : p.pos === 'ATA' && S.coPonta(p) ? ({ E: 'PE', D: 'PD' })[S.coSide(p)] || 'PON' : p.pos === 'MEI' && S.coVol(p) ? 'VOL' : p.pos;
+  S.coPosNm = p => !p ? '' : p.pos === 'LAT' ? ({ E: 'Lateral esquerdo', D: 'Lateral direito' })[S.coSide(p)] || 'Lateral'
+    : p.pos === 'ATA' ? (S.coPonta(p) ? ({ E: 'Ponta esquerda', D: 'Ponta direita' })[S.coSide(p)] || 'Ponta' : 'Centroavante')
+    : p.pos === 'MEI' ? (S.coVol(p) ? 'Volante' : 'Meia') : ({ GOL: 'Goleiro', ZAG: 'Zagueiro' })[p.pos] || p.pos;
   // Lado da vaga: 'E' ou 'D' nas vagas abertas (o primeiro da linha é o lado esquerdo, como S.coSlotLbl), senão nada
   const slotSide = (form, i) => {
     const sl = FORMS[form] && FORMS[form].slots, x = sl && sl[i]; if (!x || !(x.w || x.pos === 'LAT')) return null;
     const line = sl.map((y, j) => j).filter(j => sl[j].ln === x.ln); return line.indexOf(i) < line.length / 2 ? 'E' : 'D';
   };
   S.coSlotSide = slotSide;
-  const sideK = (p, form, i) => { if (form === undefined || i === undefined || !(+CO.sideK > 0 && +CO.sideK < 1)) return 1; const v = slotSide(form, i), s = v && S.coSide(p); return v && s !== 'A' && s !== v ? +CO.sideK : 1; };
+  const sideK = (p, form, i) => { if (form === undefined || i === undefined || !(+CO.sideK > 0 && +CO.sideK < 1)) return 1; const v = slotSide(form, i); if (!v) return 1;
+    if (p.pos === 'ATA' && FORMS[form].slots[i].pos === 'ATA' && !S.coPonta(p)) return +CO.sideK; // centroavante na vaga de ponta
+    const s = S.coSide(p); return s !== 'A' && s !== v ? +CO.sideK : 1; };
   S.coSideK = sideK;
   S.coSideOk = (p, form, i) => sideK(p, form, i) === 1;
   // `form`/`i` (a vaga) contam o lado; sem eles só a posição
@@ -554,6 +584,12 @@
     });
     // Sem sobrenome repetido no mesmo elenco (youtuber, 14/11: o campinho e a escalação mostram só o último nome, e um time
     // com dois "Bardakcı" parecia erro). Sorteio à parte, para não mudar os gerais e as idades do elenco
+    // Lado e ponta equilibrados por time (2026-11-18): 1º lateral esquerdo, 2º direito; 1º atacante centroavante, 2º ponta
+    // esquerda, 3º ponta direita; os outros por sorteio. Sorteio à parte: não muda gerais nem idades
+    const by = { LAT: [], ATA: [], MEI: [] }; out.forEach(p => { if (by[p.pos]) by[p.pos].push(p); });
+    by.MEI.forEach((p, k) => { p.vo = k < 4 ? k % 2 : +(hash(p.id + '|vol') % 100 < 45); }); // MEI, VOL, MEI, VOL, depois sorteio
+    by.LAT.forEach((p, k) => { p.ld = k === 0 ? 'E' : k === 1 ? 'D' : ['E', 'D', 'A'][hash(p.id + '|lado') % 3]; });
+    by.ATA.forEach((p, k) => { const h = hash(p.id + '|ponta'); p.pt = k === 0 ? 0 : k < 3 ? 1 : +(h % 100 < 50); if (p.pt) p.ld = k === 1 ? 'E' : k === 2 ? 'D' : ['E', 'D'][h % 2]; });
     const seen = new Set(), rn = S.rng(hash(clubId + '|' + season + '|nomes'));
     out.forEach(p => { for (let i = 0; i < 12 && seen.has(last(p.n)); i++) p.n = D.randomName(cty, rn); seen.add(last(p.n)); });
     return out;
