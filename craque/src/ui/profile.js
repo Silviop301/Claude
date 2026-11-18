@@ -131,7 +131,7 @@
       const a = +def.add(x) || 0;
       if (!a) return;
       g.p = Math.min(def.n || 1, (g.p || 0) + a);
-      if (g.p >= (def.n || 1)) { g.done = true; const pr = PRIZE[def.tier]; xp += pr.xp; done.push({ t: def.t, xp: pr.xp, p: pr.p, m: pr.m }); if (U.COINS) U.COINS.add({ n: pr.m, t: 'Meta da semana' }); }
+      if (g.p >= (def.n || 1)) { g.done = true; const pr = PRIZE[def.tier]; xp += pr.xp; done.push({ t: def.t, xp: pr.xp, p: pr.p, m: pr.m }); if (U.COINS) U.COINS.add({ n: pr.m, t: 'Meta da semana', once: 'mw-' + wk.k + '-' + g.id }); } // once: a mesma meta não paga de novo em outro aparelho (2026-11-18)
     });
     p.xp = (p.xp || 0) + xp;
     const after = level(p.xp).lv;

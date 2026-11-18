@@ -109,6 +109,9 @@
     return inv;
   }
   function put() { inv.at = Date.now(); store(KEY, inv); }
+  // Outra aba do mesmo aparelho mexeu nos itens/moedas (2026-11-18): a cópia da memória fica velha e o próximo put() desfazia
+  // o que a outra aba gastou (moedas de volta). Lê de novo na próxima consulta
+  window.addEventListener('storage', e => { if (e.key === KEY) inv = null; });
   // Tudo o que já foi usado nas carreiras salvas (em andamento e na coleção) fica liberado: ninguém perde nada
   function grantUsed(o) {
     const used = [];

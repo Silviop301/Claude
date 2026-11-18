@@ -221,7 +221,9 @@
   const AP = S.CO_APL = { r: 0.005, keep: 4, step: 50000 };
   const folhaWk = co => S.coFolha(co) + S.coAuxWage(co) + (S.coDmWage ? S.coDmWage(co) : 0);
   S.coAplV = co => { const f = S.coFin(co); return f && f.apl ? f.apl.v : 0; };
-  S.coAplMax = co => { const f = S.coFin(co); if (!f) return 0; return Math.max(0, Math.floor((f.caixa - folhaWk(co) * AP.keep) / 10000) * 10000); };
+  // O que falta pagar do empréstimo não vai para a aplicação (2026-11-18, caça de brechas): pegar o empréstimo, aplicar e quitar
+  // antes da 1ª parcela rendia sem pagar juro, de 4 em 4 rodadas
+  S.coAplMax = co => { const f = S.coFin(co); if (!f) return 0; return Math.max(0, Math.floor((f.caixa - folhaWk(co) * AP.keep - (f.loan ? f.loan.rem : 0)) / 10000) * 10000); };
   S.coAplRen = v => Math.round(v * AP.r);
   S.coAplPut = function (co, v) {
     const f = S.coFin(co); v = Math.round(v / 10000) * 10000; if (!f || v <= 0 || v > S.coAplMax(co)) return false;
@@ -242,7 +244,9 @@
 
   // ---------- vermelho ----------
   // Valor de mercado de um jogador seu (para a venda forçada e, depois, o mercado)
-  S.coValue = p => { const k = p.age <= 23 ? 1.6 : p.age <= 27 ? 1.3 : p.age <= 30 ? 1 : 0.6; return r10(p.wage * 52 * k * (1 + Math.max(0, p.pot - p.ovr) / 40)); };
+  // p.vw (2026-11-18, caça de brechas): o salário justo da última assinatura/renovação. Renovar um garoto pagando 5x o salário
+  // e vender na mesma janela multiplicava o valor (R$ 700 mil viravam R$ 4,4 mi); o que passa do pedido normal não vale no preço
+  S.coValue = p => { const k = p.age <= 23 ? 1.6 : p.age <= 27 ? 1.3 : p.age <= 30 ? 1 : 0.6, w = p.vw ? Math.min(p.wage, p.vw) : p.wage; return r10(w * 52 * k * (1 + Math.max(0, p.pot - p.ovr) / 40)); };
   // Degrau do vermelho: 0 tranquilo, 1 aviso, 2 sem contratar com taxa, 3 o presidente vai vender, 4 ultimato
   S.coFinStep = function (co) {
     const f = S.coFin(co); if (!f) return 0;
