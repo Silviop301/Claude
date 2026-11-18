@@ -1364,11 +1364,13 @@
   function acessoFesta(out, go) {
     if (!out.up || out.sacked) return go();
     const cl = club(out.club), fm = out.fame ? out.fame[1] - out.fame[0] : 0, cn = (out.coins || []).find(x => x.k === 'acesso');
-    const rw = [out.upPrem ? ['PRÊMIO', brl(out.upPrem)] : null, cn ? ['MOEDAS', '+' + cn.n] : null, fm > 0 ? ['FAMA', '+' + fm] : null, out.upRec >= 3 ? ['RECEITA', '+' + out.upRec + '%'] : null].filter(Boolean);
+    // Prêmio e moedas sem rótulo: o ícone do dinheiro / da moeda diz o que é (pedido do Silvio, 2026-11-18)
+    const ic = (f, a) => '<img class="tc-rwi" src="assets/co/' + f + '.webp" alt="' + a + '" draggable="false">';
+    const rw = [out.upPrem ? ['', ic('mo-dinheiro', 'Prêmio') + brl(out.upPrem)] : null, cn ? ['', ic('mo-moeda', 'Moedas') + '+' + cn.n] : null, fm > 0 ? ['FAMA', '+' + fm] : null, out.upRec >= 3 ? ['RECEITA', '+' + out.upRec + '%'] : null].filter(Boolean);
     let cf = ''; for (let i = 0; i < 46; i++) cf += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + ['#e8b84a', '#fff', '#7ED39A', '#c9a24a'][i % 4] + ';animation-duration:' + (2.5 + Math.random() * 3).toFixed(2) + 's;animation-delay:' + (1 + Math.random() * 3).toFixed(2) + 's"></i>';
     tacaPop('<div class="tc-ray"></div><div class="tc-cf">' + cf + '</div><div class="tc-mid tc-ac"><div class="tc-tag">ACESSO · ' + (U.YEAR0 + out.season) + '</div><div class="tc-cup">' + crest(cl.id, 'tc-cr') + '</div><div class="tc-big">Subiu!</div>' +
       '<div class="tc-sub">' + (out.upTo ? 'Próxima temporada: ' + esc(out.upTo) : esc(cl.short || cl.name) + ' sobe de divisão') + '</div>' +
-      (rw.length ? '<div class="tc-rw">' + rw.map(x => '<span><small>' + x[0] + '</small><b>' + x[1] + '</b></span>').join('') + '</div>' : '') + '</div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
+      (rw.length ? '<div class="tc-rw">' + rw.map(x => '<span>' + (x[0] ? '<small>' + x[0] + '</small>' : '') + '<b>' + x[1] + '</b></span>').join('') + '</div>' : '') + '</div><button class="btn tc-go">Seguir</button>', 'tc-fe', go);
     sfx('levelup'); sfx('cheer');
   }
   function finishSeason() { const out = S.coSeasonEnd(co); payCoins(out); if (U.profileCoSeason) U.profileCoSeason(co, out); stat('season', Math.min(40, co.hist.length)); save('end'); acessoFesta(out, () => seasonEnd(out)); }
