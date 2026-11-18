@@ -125,6 +125,20 @@
     it = it.filter(e => getComputedStyle(e).animationName === 'none');
     it.forEach((e, i) => { e.style.setProperty('--vi', Math.min(i, 8)); e.classList.add('vd-in'); });
     setTimeout(() => it.forEach(e => { e.classList.remove('vd-in'); e.style.removeProperty('--vi'); }), 700);
+    // barras enchem ao abrir a tela (a barra da diretoria na Semana é do vNums)
+    r.querySelectorAll('.ld-bar > u').forEach(u => { if (u.animate && !u.closest('.sm-dir')) u.animate([{ width: '0%' }, { width: u.style.width || '100%' }], { duration: 600, delay: 200, easing: VE, fill: 'backwards' }); });
+  }
+  // Fim da temporada (uma vez por temporada, não a cada aba): as moedas do prêmio caem no cartão e contam, a fama conta e a barra anda
+  const vSeen = new WeakSet();
+  function vSeason(st, out) {
+    if (vSeen.has(out)) return; vSeen.add(out); if (still()) return;
+    const ch = st.querySelector('.fdt-ch.coin'), b = ch && ch.querySelector('b'), n = out.coinsTot | 0;
+    if (b && n > 0) { const end = b.textContent; b.textContent = end.replace(String(n), '0'); ch.classList.add('vd-cz');
+      for (let i = 0; i < 4; i++) { const d = document.createElement('i'); d.className = 'vd-cn'; d.style.setProperty('--vi', i); d.innerHTML = U.COINS ? U.COINS.svg : ''; ch.appendChild(d); setTimeout(() => d.remove(), 1600); }
+      setTimeout(() => { if (!b.isConnected) return; b.textContent = end; vCount(b, 0, n, v => end.replace(String(n), String(Math.round(v))), 800); }, 620);
+      setTimeout(() => ch.classList.remove('vd-cz'), 1700); }
+    const fb = st.querySelector('.fdt-fm b'); if (fb && out.fame && out.fame[0] !== out.fame[1]) { const end = fb.textContent; fb.textContent = out.fame[0]; setTimeout(() => { if (!fb.isConnected) return; fb.textContent = end; vCount(fb, out.fame[0], out.fame[1], v => String(Math.round(v)), 700); }, 500); }
+    st.querySelectorAll('.fdt-bar > i').forEach(i => { if (i.animate) i.animate([{ width: '0%' }, { width: i.style.width }], { duration: 700, delay: 350, easing: VE, fill: 'backwards' }); });
   }
   // Número que corre de a até b; no fim volta o texto exato que a tela escreveu
   function vCount(el, a, b, fmt, ms) {
@@ -140,7 +154,7 @@
     const c = C(), co = c && c.co, q = s => st.querySelector(s);
     if (q('.sm-h') && semana.pop) return; // janelinha vai abrir por cima da Semana: os números correm quando ela fechar e a Semana voltar
     // moedas da conta (valem fora da carreira também)
-    const cb = q('.coin-pill b'); if (cb && U.COINS) { const n = U.COINS.get(), p = vCoins; vCoins = n; if (p != null && p !== n && !still()) vCount(cb, p, n, v => Math.round(v).toLocaleString('pt-BR'), 800); }
+    const cb = q('.coin-pill b'); if (cb && U.COINS) { const n = U.COINS.get(), p = vCoins; vCoins = n; if (p != null && p !== n && !still()) { vCount(cb, p, n, v => Math.round(v).toLocaleString('pt-BR'), 800); if (n > p) { const pl = cb.parentNode; pl.classList.add('vd-gain'); setTimeout(() => pl.classList.remove('vd-gain'), 1000); } } }
     if (!co) return;
     if (vS.co !== co) vS = { co, v: {} };
     const V = vS.v, set = (k, v) => { const p = V[k]; V[k] = v; return p == null || p === v || still() ? null : { p }; };
@@ -2472,8 +2486,13 @@
   function fechado(np, papel, d, from) {
     const c = C(), co = c.co, me = club(co.club), fc = from && club(from);
     mercado();
+    if (S.coNums) S.coNums(co.squad); // o número que ele vai usar (o mesmo do campinho), para a camisa
     const fee = from && d ? c.brl(d.v) + (d.pay ? ' · ' + (d.pay + 1) + 'x' : '') : 'sem custo';
-    pop('<div class="mkd"><div class="mkd-l"><small>CONTRATADO</small>' + crest(me.id, 'mkd-cr') + '<b>' + esc(me.short || me.name) + '</b><span>' + (fc ? 'chega do ' + esc(fc.short || fc.name) : 'estava sem clube') + '</span></div>' +
+    // Camisa do clube com o nome e o número, assinatura e carimbo (Vida, 2026-11-18): entram em sequência por CSS (.mkd.vd)
+    const ok = h => typeof h === 'string' && /^#[0-9a-f]{6}$/i.test(h), kt = (U.LP && U.LP.kitFor ? U.LP.kitFor(me.name, me.id) : null) || ['#F4F1E8', '#1D1D1F'];
+    const kb = ok(kt[0]) ? kt[0] : '#F4F1E8', ktr = ok(kt[1]) && kt[1].toLowerCase() !== kb.toLowerCase() ? kt[1] : kt.pat && ok(kt.pat[1]) ? kt.pat[1] : '#1D1D1F';
+    const SIG = '<svg class="mkd-sg" viewBox="0 0 170 34" aria-hidden="true"><path pathLength="1" d="M4 24C14 2 20 4 18 20C17 30 26 8 32 12C38 16 30 28 40 20C48 13 46 6 54 16C60 24 64 10 72 14C80 18 76 26 88 18C98 11 104 22 116 16C128 10 140 22 166 12"/></svg>';
+    pop('<div class="mkd vd"><div class="mkd-l"><small>CONTRATADO</small><span class="mkd-sh">' + shirtSvg(kb, ktr, c.last(np.n).toUpperCase().slice(0, 12), np.num || '') + '<i class="mkd-st" aria-hidden="true">FECHADO</i></span><b>' + crest(me.id, 'mkd-cr') + esc(me.short || me.name) + '</b><span>' + (fc ? 'chega do ' + esc(fc.short || fc.name) : 'estava sem clube') + '</span>' + SIG + '</div>' +
       '<div class="mkd-r"><b>' + esc(np.n) + '</b><span class="mkd-ch"><i>' + S.CO_POS_NM[np.pos] + '</i><i class="g">' + (papel === 'Titular' ? 'Titular prometido' : papel) + '</i><i class="l">' + np.age + ' anos</i></span>' +
         '<div class="mkx-li"><div><span>Transferência</span><b>' + fee + '</b></div><div><span>Salário</span><b>' + c.brl(np.wage) + '/rodada</b></div><div><span>Contrato</span><b>até ' + (U.YEAR0 + co.season + np.ct) + '</b></div></div>' +
         '<span class="rs-gap"></span><span class="mkx-b"><button class="hl-btn gold" id="mkd-time">Ver no time</button><button class="hl-btn dark" id="mkd-mk">Mercado</button></span></div></div>', 'Contratado', w => {
@@ -3146,6 +3165,7 @@
           (out.offers ? '<button class="fdt-go" id="ldy-of"><b>Ver as propostas</b>' + (out.sacked ? '' : '<small>ou ficar no ' + esc(club(co.club).short || club(co.club).name) + '</small>') + '</button>' :
             '<button class="fdt-mk" id="ldy-mk">Ouvir outros clubes</button><button class="fdt-go" id="ldy-ns"><b>Temporada ' + (U.YEAR0 + co.season) + '</b><small>continuar no ' + esc(club(co.club).short || club(co.club).name) + '</small></button>') +
           '<button class="fdt-fim" id="ldy-fim">Encerrar carreira</button></div></div>', st => {
+        try { vSeason(st, out); } catch (e) { /* só enfeite */ }
         st.querySelectorAll('[data-ft]').forEach(b => b.onclick = () => { sfx('tap'); tab = +b.dataset.ft; draw(); });
         st.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { if (S.coSkill(co, b.dataset.sk)) { sfx('tap'); c.save(); draw(); } });
         if (st.querySelector('#ldy-of')) st.querySelector('#ldy-of').onclick = () => { sfx('tap'); co.step = 'offers'; c.offers(out.offers); };
@@ -3601,6 +3621,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, skipAsk, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, _fechado: fechado, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, skipAsk, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
