@@ -315,7 +315,11 @@
   S.coSideK = sideK;
   S.coSideOk = (p, form, i) => sideK(p, form, i) === 1;
   // `form`/`i` (a vaga) contam o lado; sem eles só a posição
-  S.coOvrAt = (p, slot, form, i) => { const k = (!slot || p.pos === slot ? 1 : fit(p.pos, slot)) * sideK(p, form, i); return k === 1 ? p.ovr : Math.round(p.ovr * k); };
+  // Geral de hoje: o de sempre mais o ajuste só do próximo jogo (`p.tov`, acontecimentos da semana em coachpress.js:
+  // a balada dá −1; some no fim do jogo seguinte do time, tenha ele jogado ou não; Silvio 2026-11-18)
+  const ovNow = p => p.ovr + (p.tov || 0);
+  S.coOvrNow = ovNow;
+  S.coOvrAt = (p, slot, form, i) => { const k = (!slot || p.pos === slot ? 1 : fit(p.pos, slot)) * sideK(p, form, i); return k === 1 ? ovNow(p) : Math.round(ovNow(p) * k); };
 
   // ---------- elencos ----------
   const hash = s => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
@@ -604,7 +608,7 @@
   // ---------- força do time e confronto ----------
   const byId = squad => { const m = {}; squad.forEach(p => { m[p.id] = p; }); return m; };
   const last = n => String(n || "").split(" ").filter(Boolean).pop() || "";
-  const eff = (p, sl) => p.ovr * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / CO.moK);
+  const eff = (p, sl) => (p.ovr + (p.tov || 0)) * fit(p.pos, sl) * (0.8 + 0.2 * (p.en === undefined ? 100 : p.en) / 100) * (p.out ? 0.5 : 1) * (1 + ((p.mo === undefined ? 60 : p.mo) - 60) / CO.moK);
   // Forma de um lado em campo: quanto tem em cada parte (cada jogador vale ~1 = 70 de força na vaga)
   // `noAt`: sem o atributo por setor (só o geral). O ao vivo da simulação livre pede assim: lá o campinho já lê os
   // atributos em cada lance (fase 2), e contar de novo na força do ataque seria contar duas vezes
@@ -1731,6 +1735,7 @@
     const motiv = co.xp.motiv * 0.06;
     co.squad.forEach(p => {
       const pl = m.played[p.id] || 0;
+      if (p.tov) delete p.tov; // o ajuste do acontecimento vale só neste jogo
       p.en = pl ? Math.min(100, p.en + (100 - p.en) * CO.enRec) : 100;
       // Moral volta aos poucos para 60; vitória sobe, derrota desce (a motivação do técnico segura a queda)
       p.mo += (60 - p.mo) * 0.12;

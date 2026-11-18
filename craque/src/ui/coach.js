@@ -1162,10 +1162,25 @@
         stats() { const o = k => m[k] || { us: 0, them: 0 }; return { sh: o('sh'), ot: o('ot'), fo: o('fo'), of: o('of'), yc: o('yc'), rc: o('rc'), poss: S.coPoss(m) }; },
       };
     }
+    // Pílula que desliza até a velocidade escolhida (1× ou 3×)
+    const spThumb = () => {
+      const w = $('lv-speed'); if (!w) return; let t = w.querySelector('.lv-th');
+      const on = w.querySelector('button.on'); if (!t) { t = document.createElement('i'); t.className = 'lv-th'; w.insertBefore(t, w.firstChild); }
+      if (!on) { t.style.opacity = 0; return; }
+      t.style.opacity = 1; t.style.width = on.offsetWidth + 'px'; t.style.transform = 'translateX(' + on.offsetLeft + 'px)';
+    };
+    spThumb(); requestAnimationFrame(() => { spThumb(); const w = $('lv-speed'); if (w) w.classList.add('sl'); });
     $('lv-speed').querySelectorAll('button').forEach(b => b.onclick = () => {
       sfx('tap'); const k = b.dataset.sp;
-      if (k === 'fim') { co.speed = 'fim'; if (!open) toEnd(); return; }
-      co.speed = k; $('lv-speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); // pulinho do toque (style.css lvTap)
+      if (k === 'fim') {
+        const skip = () => { co.speed = 'fim'; if (!open) toEnd(); };
+        if (m.done || !ctx || !U.LD.skipAsk) return skip();
+        // Aviso antes de pular: o jogo para enquanto pergunta (no gol que já está saindo, pergunta sem parar)
+        const held = ctx.pause();
+        return U.LD.skipAsk(go => { if (go) co.speed = 'fim'; if (held) ctx.resume(); else if (go && !open) toEnd(); });
+      }
+      co.speed = k; $('lv-speed').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); spThumb();
       if (!open && !wait) { clearTimeout(timer); timer = setTimeout(tick, spMs(k)); }
     });
     // Durante a jogada de um gol que o motor já decidiu, o pedido fica guardado e o jogo para logo depois da rede balançar

@@ -384,7 +384,7 @@
     const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(own ? p.pos : slot || p.pos) + '"' + (own ? ' data-own' : '') + ' style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + ova + ', energia ' + Math.round(p.en) + '%">' +
-      '<i class="ld-dc' + (!o.num && fitC !== 'ok' ? ' pen' : '') + '">' + (o.num ? (p.num || p.ovr) : ova) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + tagT + '</em></span></button>';
+      '<i class="ld-dc' + (!o.num && (fitC !== 'ok' || p.tov < 0) ? ' pen' : !o.num && p.tov > 0 ? ' tvu' : '') + '"' + (p.tov ? ' title="' + (p.tov > 0 ? '+' : '−') + Math.abs(p.tov) + ' no próximo jogo"' : '') + '>' + (o.num ? (p.num || p.ovr) : ova) + yc + '</i>' + moAr(p) + '<span class="ld-dn"><b>' + (!o.num && p.num ? '<s class="ld-nu">' + p.num + '</s>' : '') + esc(last(p.n)) + '</b><em class="' + fitC + '">' + tagT + '</em></span></button>';
   }
   function rivalDot(x, y, nm, tag) {
     return '<span class="ld-dot riv" style="left:' + x + '%;top:' + y + '%"><i class="ld-dc">?</i><span class="ld-dn"><b>' + esc(nm) + '</b>' + (tag ? '<em class="riv">' + tag + '</em>' : '') + '</span></span>';
@@ -1358,19 +1358,23 @@
     const who = press ? '<span class="cvj-d jr" style="background-image:url(' + CO_ART + 'rosto-' + String(jm[2]).padStart(2, '0') + '.webp?v=2)"><em>TV</em></span><span class="cvj-n"><b>Coletiva</b><small>' + esc(jm[0] + ' · ' + jm[1]) + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : P ? '<span class="cvj-d ' + enRing(P.en) + '" style="--en:' + Math.round(P.en) + '"><b>' + P.ovr + '</b><em>' + P.pos + '</em></span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(P.n) + (P2 ? ' x ' + esc(P2.n) : '') + '<em class="cl">' + esc(d.tag) + '</em></small></span>'
       : '<span class="cvj-d jr pv-cr">' + crest(co.club, 'pv-crs') + '</span><span class="cvj-n"><b>' + esc(d.ttl) + '</b><small>' + esc(club(co.club).short || club(co.club).name) + '<em class="cl">' + esc(d.tag) + '</em></small></span>';
-    const body = (say, pick, was, dl) => '<div class="cvj-h">' + who + (pick ? cvjMo(moP(), was, dl) : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
+    // Depois da escolha (2026-11-18, Silvio: "culpei a arbitragem mas não vi o valor da multa"): os 3 cartões viram um só,
+    // "Você escolheu", com o que aconteceu de verdade (S.coPvRes: multa e caixa em R$, energia em número, jogador pelo nome)
+    const rz = (o, res) => '<div class="pv-rz"><span class="pv-rn"><small>VOCÊ ESCOLHEU</small><b>' + esc(o.name) + '</b></span><span class="pv-rc">' +
+      (res || []).slice(0, 6).map(x => '<em class="' + (x[0] || '') + (x[2] ? ' bg' : '') + '">' + esc(x[1]) + '</em>').join('') + '</span><span class="pv-rt">toque para seguir</span></div>';
+    const body = (say, pick, was, dl, res) => '<div class="cvj-h">' + who + (pick ? cvjMo(moP(), was, dl) : '<button class="ld-x" data-pop-x aria-label="Fechar">' + XI_ICO + '</button>') + '</div>' +
       '<div class="cvj-say"><p>' + (press && !pick ? '“' + esc(say) + '”' : esc(say)) + '</p></div>' +
-      '<div class="cvj-ops">' + d.ops.map(o => '<button class="cvj-op' + (pick ? (o.k === pick ? ' on' : ' off') : '') + '" data-pv="' + o.k + '"' + (pick ? ' disabled' : '') + '><b>' + esc(o.name) + '</b><span>' + fx(o) + '</span></button>').join('') + '</div>';
+      (pick ? rz(d.ops.find(o => o.k === pick), res) : '<div class="cvj-ops">' + d.ops.map(o => '<button class="cvj-op' + (pick ? (o.k === pick ? ' on' : ' off') : '') + '" data-pv="' + o.k + '"' + (pick ? ' disabled' : '') + '><b>' + esc(o.name) + '</b><span>' + fx(o) + '</span></button>').join('') + '</div>');
     if (S.coWeekSeen) S.coWeekSeen(co); c.save('hub');
     pop(body(d.say), press ? 'Coletiva' : d.ttl, w => {
       w.querySelectorAll('[data-pv]').forEach(b => b.onclick = () => {
         const k = b.dataset.pv, m0 = moP().mo, was = S.coMoTxt(moP()).n, cc = w.querySelector('.ld-pop-c');
         const r = press ? S.coPressAnswer(co, d, k) : S.coEventAnswer(co, d, k); if (!r) return;
         sfx(r.ok ? 'tap' : 'back'); c.save('hub');
-        cc.classList.add('done'); cc.innerHTML = body(r.re, k, was, Math.round(moP().mo - m0));
+        cc.classList.add('done'); cc.innerHTML = body(r.re, k, was, Math.round(moP().mo - m0), r.res);
+        // não fecha sozinha: fica até o toque (a multa passava batido em 2,6 s)
         const end = () => { if (w.isConnected) { closePop(); semana(); } };
         setTimeout(() => { if (w.isConnected) w.onclick = () => { sfx('tap'); end(); }; }, 350);
-        setTimeout(end, 2600);
       });
     }, 'cvj-pop pv-pop');
   }
@@ -1379,7 +1383,7 @@
     const st = document.querySelector('#ld .ld-st'); if (!st || !st.querySelector('.sm')) return;
     if (document.querySelector('#ld-pop') || st.querySelector('.up-ty')) { clearTimeout(betToast.t); betToast.t = setTimeout(() => betToast(b), 700); return; }
     const box = document.createElement('div'); box.className = 'up-ty' + (b.win ? '' : ' ult'); box.setAttribute('role', 'status');
-    box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + (b.win ? '<path d="M5 12.5l4.5 4.5L19 7.5"/>' : '<path d="M7 7l10 10M17 7L7 17"/>') + '</svg></i><span><b>' + (b.win ? 'Promessa cumprida' : 'Promessa não cumprida') + '</b><small>' + (b.win ? 'Torcida e diretoria gostaram' : 'A torcida cobrou a vitória prometida') + '</small></span>';
+    box.innerHTML = '<i><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + (b.win ? '<path d="M5 12.5l4.5 4.5L19 7.5"/>' : '<path d="M7 7l10 10M17 7L7 17"/>') + '</svg></i><span><b>' + (b.win ? 'Promessa cumprida' : 'Promessa não cumprida') + (b.vs ? ' · ' + esc((b.win ? 'venceu ' : 'contra ') + (window.CRAQUE_DATA.o ? window.CRAQUE_DATA.o(b.vs) : b.vs)) : '') + '</b><small>' + (b.res && b.res.length ? b.res.map(x => esc(x[1])).join(' · ') : b.win ? 'Torcida e diretoria gostaram' : 'A torcida cobrou a vitória prometida') + '</small></span>';
     st.appendChild(box); sfx(b.win ? 'ok' : 'back');
     const t = toastLife(box, 6000); box.onclick = () => { clearTimeout(t); box.remove(); };
   }
@@ -1796,6 +1800,19 @@
       '<button class="hl-btn gold" id="sc-y">Entendi, pagar</button><button class="hl-btn line" data-pop-x>Cancelar</button></div>', 'Vale só nesta carreira', w => {
       w.querySelector('#sc-y').onclick = () => { try { localStorage.setItem('climbix-co-so-carreira', '1'); } catch (e) {} closePop(); go(); };
     }, 'hl-pop acd-pop tm-pop ca-pop');
+  }
+  // Aviso antes de pular para o resultado (botão » do ao vivo). done(true) pula, done(false) segue o jogo.
+  // "Não perguntar de novo" grava climbix-co-pular = '0' (os Ajustes não mostram; limpar o aparelho volta a perguntar).
+  function skipAsk(done) {
+    let off = false; try { off = localStorage.getItem('climbix-co-pular') === '0'; } catch (e) {}
+    if (off) return done(true);
+    pop('<div class="acd-help sk-pop"><b>Pular para o resultado?</b><p>O jogo é simulado até o apito final.</p>' +
+      '<button class="hl-btn gold" id="sk-y">Pular</button><button class="hl-btn line" id="sk-n">Continuar assistindo</button>' +
+      '<label class="sk-no"><input type="checkbox" id="sk-ck"><span>Não perguntar de novo</span></label></div>', 'Pular para o resultado', w => {
+      const fim = go => { sfx('tap'); if (go && w.querySelector('#sk-ck').checked) { try { localStorage.setItem('climbix-co-pular', '0'); } catch (e) {} } closePop(); done(go); };
+      w.querySelector('#sk-y').onclick = () => fim(true);
+      w.querySelector('#sk-n').onclick = () => fim(false);
+    }, 'hl-pop acd-pop tm-pop ca-pop sk-c', true);
   }
   function coinAsk(n, what, gain, go) {
     const saldo = U.COINS.get();
@@ -3584,6 +3601,6 @@
     draw();
   }
 
-  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
+  U.LD = { on, show, off, fit, lift, wroom: () => WROOM, busy: () => performance.now() - swapAt < DUP, /* a tela acabou de trocar e ainda não aceita toque (ferramentas esperam) */ estadio, ingresso, ampliar, melhorias, loja, escolher, semana, time, rail, head, pill, lbl, gold, pop, closePop, popHead, dot, spotsL, PITCH, cadHtml, tacPicker, liveHtml, livePaint, liveStop, livePens, skipAsk, result, segunda, pvPop, caderno, tabela, clube, depMedico, financas, elenco, FIN_TABS, reuniao, patrocinio, banco, temporada, propostas, welcome, funcoes, batedores, treino, olheiro, prelecao, mercado, mercadoRes, noticias, recebidas, ficha, proposta, contrato, recebida };
   U.ldOff = () => { if (document.body.classList.contains('ld-on')) off(); };
 })();
