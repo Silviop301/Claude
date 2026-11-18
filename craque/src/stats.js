@@ -1,6 +1,7 @@
 // Contagem anônima: manda para climbix.app/api/stats.php só eventos sem identidade (o servidor soma por dia).
 // O aparelho guarda sozinho o dia da primeira visita e se já mandou cada retorno; nada de id, conta ou IP.
-// Eventos: first, d1, d7 e session (sozinhos, aqui); start, season e end vêm das telas por CLIMBIX_STAT(ev, modo, n, chave).
+// Eventos: first, d1, d7, session, day (abriu o jogo hoje, 1x por aparelho por dia, inclusive quem já jogava antes) e
+// play (jogou hoje: carreira começou/seguiu ou saiu da tela dentro de um modo, 1x por dia) sozinhos, aqui; start, season e end vêm das telas por CLIMBIX_STAT(ev, modo, n, chave).
 // Quem já jogava antes desta contagem não entra em first/d1/d7 (a linha de base é só de aparelhos novos).
 (function () {
   if (typeof window === 'undefined') return;
@@ -27,6 +28,14 @@
   const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const dayNo = s => { const [y, m, d] = s.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5); };
 
+  // Aparelhos diferentes no dia: cada aparelho manda day (abriu) e play (jogou) no máximo 1x por dia
+  function daily(ev) {
+    const st = get(); if (!st) return;
+    const t = today(), f = ev === 'day' ? 'dd' : 'dp';
+    if (st[f] === t) return;
+    st[f] = t; put(st); send(ev);
+  }
+
   // Primeira visita e retornos
   (function visit() {
     let st = get();
@@ -38,8 +47,10 @@
       st = { f: t, old: old ? 1 : 0, seen: [], src: srcNow };
       put(st);
       if (!old) send('first', '', srcNow);
+      daily('day');
       return;
     }
+    daily('day');
     if (st.old) return;
     const gap = dayNo(t) - dayNo(st.f);
     if (gap === 1 && !st.d1) { st.d1 = 1; put(st); send('d1'); }
@@ -56,6 +67,7 @@
       if (st.seen.includes(id)) return;
       st.seen.push(id); st.seen = st.seen.slice(-40); put(st);
     }
+    if (m && m !== 'inicio') daily('play');
     const st2 = ev === 'start' ? get() : null;
     send(ev, m, ev === 'season' ? n : st2 && !st2.old ? st2.src || '' : '');
   };
@@ -67,11 +79,14 @@
   function leave() {
     if (!shown) return;
     acc += Date.now() - shown; shown = 0; hiddenAt = Date.now();
-    if (!sent) { sent = true; send('session', curMode(), band(acc)); }
+    const cm = curMode();
+    if (cm !== 'inicio') daily('play');
+    if (!sent) { sent = true; send('session', cm, band(acc)); }
   }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') return leave();
     if (hiddenAt && Date.now() - hiddenAt > 30 * 60000) { acc = 0; sent = false; last = ''; }
+    daily('day');
     shown = Date.now();
   });
   addEventListener('pagehide', leave);
