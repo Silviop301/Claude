@@ -393,8 +393,8 @@
     // do lado trocado (S.coSideOk) o número também sai laranja, com o geral que rende ali
     const fitC = !slot || p.pos === slot ? (S.coSideOk(p, o.form, o.i) ? 'ok' : 'lado') : (S.coFit(p.pos, slot) >= 0.88 ? 'sabe' : 'fora'), ova = S.coOvrAt(p, slot, o.form, o.i);
     // Escalação (o.own, Silvio 2026-11-16): a etiqueta leva a cor do setor DO JOGADOR e, fora da posição, diz a posição
-    // dele (um zagueiro no meio aparece azul no meio dos verdes); na posição dele segue o nome da vaga (LE, VOL, PD...)
-    const own = o.own && slot, tagT = own && p.pos !== slot ? p.pos : (o.tag || slot || p.pos);
+    // dele (um zagueiro no meio aparece azul no meio dos verdes)
+    const own = o.own && slot, tagT = o.tag && !own ? o.tag : S.coPosAb(p); // Silvio 18/11: a mesma sigla do banco e do mercado (PE, VOL, LD), na vaga ou fora dela
     const yc = (o.yc !== undefined ? o.yc : C().pend(p)) ? '<i class="ld-yc" title="' + (o.yc !== undefined ? 'Amarelado' : 'Pendurado') + '"></i>' : '';
     return '<button class="ld-dot ' + enRing(p.en) + (o.sel ? ' sel' : '') + (fitC === 'fora' ? ' fora' : '') + '"' + (o.attr || '') + ' data-ln="' + lnOf(own ? p.pos : slot || p.pos) + '"' + (own ? ' data-own' : '') + ' style="left:' + x + '%;top:' + y + '%;--en:' + Math.round(p.en) + '"' +
       ' aria-label="' + esc(p.n) + ', ' + (slot || p.pos) + ', ' + ova + ', energia ' + Math.round(p.en) + '%">' +
@@ -759,7 +759,7 @@
           co.form = nf; co.xi = xi; swap = null; selB = null; st.querySelector('#tm-form').textContent = nf;
           xi.forEach((id, i) => { const el = st.querySelector('[data-pid="' + id + '"]'), p = by[id]; if (!el || !p) return;
             el.style.left = sp2[i][0] + '%'; el.style.top = sp2[i][1] + '%'; el.dataset.xi = i;
-            const em = el.querySelector('.ld-dn em'); if (em) { em.className = fitOf(p, sl2[i]); em.textContent = p.pos !== sl2[i] ? p.pos : S.coSlotLbl(nf, i); }
+            const em = el.querySelector('.ld-dn em'); if (em) { em.className = fitOf(p, sl2[i]); em.textContent = S.coPosAb(p); }
             el.classList.toggle('fora', fitOf(p, sl2[i]) === 'fora'); });
           st.querySelectorAll('[data-pid]').forEach(el => { if (!xi.includes(el.dataset.pid)) el.classList.add('tm-out'); });
           clearTimeout(anim); anim = setTimeout(draw, 430);
