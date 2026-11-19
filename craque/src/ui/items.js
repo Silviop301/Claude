@@ -402,9 +402,9 @@
   }
   // Moeda desenhada (arte do ChatGPT, 2026-11-11) dentro de um svg: as regras de tamanho (`... svg`) seguem valendo
   const COIN_SVG = '<svg viewBox="0 0 26 26" aria-hidden="true"><image href="assets/co/mo-moeda.webp" width="26" height="26"/></svg>';
-  // Pílula de saldo; com id vira botão (abre a loja)
+  // Pílula de saldo; com id vira botão (abre a loja) e ganha um "+" para o novato ver que leva à loja (19/11)
   const pill = (cls, id) => { const n = wallet().n, lab = n + (n === 1 ? ' moeda' : ' moedas'), tag = id ? 'button' : 'span';
-    return '<' + tag + ' class="coin-pill' + (cls ? ' ' + cls : '') + '"' + (id ? ' id="' + id + '" aria-label="' + lab + ', abrir a loja"' : ' role="img" aria-label="' + lab + '"') + '>' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b></' + tag + '>'; };
+    return '<' + tag + ' class="coin-pill' + (cls ? ' ' + cls : '') + '"' + (id ? ' id="' + id + '" aria-label="' + lab + ', abrir a loja"' : ' role="img" aria-label="' + lab + '"') + '>' + COIN_SVG + '<b>' + n.toLocaleString('pt-BR') + '</b>' + (id ? '<i class="cp-plus" aria-hidden="true">+</i>' : '') + '</' + tag + '>'; };
   // Times comprados ficam no perfil (Silvio 2026-11-09): depois de comprado, o time sai de graça nas próximas carreiras
   const owns = id => !!wallet().clubs[id];
   const own = id => { wallet().clubs[id] = Date.now(); put(); };
