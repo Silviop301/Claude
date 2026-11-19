@@ -1860,33 +1860,72 @@
     }
     // Boneco: camisa com o número (na cor do calção, para ler em qualquer uniforme) e o anel de energia em volta, que esvazia
     // e passa de verde a amarelo e vermelho; você continua maior, dourado, com VOCÊ e o seu marcador de energia embaixo
-    // Drible (Silvio, 10/11: "pode colocar uma animação de drible?"). Só desenho, a conta do lance não muda: quem dribla ameaça
-    // para o lado do marcador e sai pelo outro (corte), passa o pé por cima da bola duas vezes e sai (pedalada) ou toca a bola
-    // por baixo dele e dá a volta (caneta); quem marca vai na finta e fica. drOff devolve o desvio de lado em metros.
+    // Drible (Silvio, 10/11: "pode colocar uma animação de drible?"; 19/11: "criar umas variantes melhores"). Só desenho, a conta
+    // do lance não muda (o sorteio do tipo é Math.random, fora da semente). Sete jeitos: corte (o corpo ameaça e a bola sai para o
+    // outro lado), pedalada (o pé passa por cima da bola três vezes e sai), elástico (a bola vai para fora e volta num estalo),
+    // roleta (gira em volta da bola de costas para o marcador), caneta (a bola passa entre as pernas dele), meia-lua (a bola por
+    // um lado do marcador e ele pelo outro) e chapéu (a bola por cima). Craque (`dri` alto) faz mais firula; caneta, meia-lua e
+    // chapéu pedem o marcador perto. drOff devolve o desvio [x, y, altura] em metros de quem dribla (who 1), do marcador (who 0)
+    // ou da bola (ballOf): nos três de bola longe ela segue um caminho de verdade até um ponto além do marcador (`drGeo`).
     function drStart(p, q, wx, wy) {
       const d = Math.hypot(wx - p.x, wy - p.y) || 1, ux = (wx - p.x) / d, uy = (wy - p.y) / d, nx = -uy, ny = ux;
-      const lat = q ? (q.x - p.x) * nx + (q.y - p.y) * ny : 0, sg = Math.abs(lat) > 0.3 ? Math.sign(lat) : Math.random() < 0.5 ? 1 : -1, r = Math.random();
-      const kind = q && Math.hypot(q.x - p.x, q.y - p.y) < 3.4 && Math.abs(lat) < 1 && r < 0.22 ? 'caneta' : r < 0.5 ? 'pedalada' : 'corte';
-      const sp = q ? cl(3 / (Math.hypot(q.x - p.x, q.y - p.y) || 1), 0.6, 1.15) : 1; // marcador mais longe: a finta sai mais devagar, para o corte ser em cima dele
-      p.dr = { t: 0, sp, kind, sg, ux, uy, nx, ny, who: 1 }; if (q) q.dr = { t: 0, sp, kind, sg, ux, uy, nx, ny, who: 0 };
+      const lat = q ? (q.x - p.x) * nx + (q.y - p.y) * ny : 0, dq = q ? Math.hypot(q.x - p.x, q.y - p.y) : 99, sg = Math.abs(lat) > 0.3 ? Math.sign(lat) : Math.random() < 0.5 ? 1 : -1;
+      const sk = cl(1 + qa(p, 'dri') * 3.3, 0.15, 2), W = { corte: 3, pedalada: 2.2, elastico: 1.1 * sk, roleta: 0.8 * sk };
+      if (q && dq < 3.6) W.caneta = 1.1 * sk;
+      if (q && dq < 4.4 && dq > 1.4) W.chapeu = 0.6 * sk;
+      if (q && dq < 4.6) W.meialua = 1.0 * sk;
+      let r = Math.random() * Object.values(W).reduce((a, b) => a + b, 0), kind = 'corte';
+      for (const k in W) { if ((r -= W[k]) <= 0) { kind = k; break; } }
+      const sp = q ? cl(3 / (dq || 1), 0.6, 1.15) : 1; // marcador mais longe: a finta sai mais devagar, para o corte ser em cima dele
+      const o = { t: 0, sp, kind, sg, ux, uy, nx, ny, o: p, m: q || null };
+      p.dr = Object.assign({ who: 1 }, o); if (q) q.dr = Object.assign({ who: 0 }, o);
       DRIB[kind] = (DRIB[kind] || 0) + 1;
     }
-    const sm = (a, b, t) => { const v = cl((t - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); };
-    function drOff(q, ballOf) { // [de lado, para a frente]
-      const t = q.t, K = q.kind; let la = 0, fw = 0;
-      if (ballOf) { // a bola no pé de quem dribla
-        if (K === 'corte') la = 0.95 * sm(0, 0.15, t) - 2.0 * sm(0.17, 0.4, t) + 1.05 * sm(0.5, 0.95, t);
-        else if (K === 'pedalada') la = -0.9 * sm(0.5, 0.66, t) * (1 - sm(0.8, 1.2, t));
-        else fw = 1.7 * sm(0.04, 0.26, t) * (1 - sm(0.5, 0.85, t));
-      } else if (q.who) {
-        if (K === 'corte') la = 0.5 * sm(0, 0.16, t) - 1.3 * sm(0.18, 0.42, t) + 0.8 * sm(0.55, 1.05, t);
-        else if (K === 'pedalada') la = (t < 0.5 ? 0.55 * Math.sin(t / 0.5 * Math.PI * 2) : 0) - 0.8 * sm(0.5, 0.68, t) * (1 - sm(0.8, 1.2, t));
-        else la = -1.0 * sm(0.04, 0.28, t) * (1 - sm(0.5, 0.95, t));
-      } else {
-        if (K === 'caneta') la = 0.3 * sm(0.04, 0.24, t) * (1 - sm(0.6, 1.1, t));
-        else { const a = K === 'pedalada' ? 0.3 : 0; la = 1.1 * sm(0.03 + a, 0.33 + a, t) * (1 - sm(0.85 + a, 1.4 + a, t)); }
+    const sm = (a, b, t) => { const v = cl((t - a) / (b - a), 0, 1); return v * v * (3 - 2 * v); }, bp = (a, b, c, e, t) => sm(a, b, t) * (1 - sm(c, e, t));
+    // Caneta, meia-lua e chapéu: a bola vai até um ponto além do marcador (pelo meio das pernas, por fora dele ou pelo alto) e quem
+    // dribla dá a volta por dentro e a encontra lá; depois os dois voltam juntos para o lugar de verdade. Conta com as posições de
+    // agora (quem dribla, a bola e o marcador andam), então o encontro fica sempre além do marcador. who: 2 bola, 1 quem dribla
+    function drGeo(q, who) {
+      const t = q.t, K = q.kind, m = q.m, o = q.o; if (!m || !o) return [0, 0, 0];
+      const sx = q.nx * q.sg, sy = q.ny * q.sg, ext = K === 'chapeu' ? 4.6 : 4.2; // o disco tem ~3,2 m (4 com o anel): a bola precisa passar bem além dele para aparecer
+      const ah = K === 'chapeu' ? 0.48 : 0.34, cr = 0.6 * sm(ah, 0.64, t); // a bola chega e ainda rola um pouco para a frente
+      const tx = m.x + q.ux * (ext + cr) - sx * (K === 'meialua' ? 0 : 0.6), ty = m.y + q.uy * (ext + cr) - sy * (K === 'meialua' ? 0 : 0.6);
+      const w2 = sm(0.62, 1.1, t), bz = (ax, ay, cx, cy, ex, ey, w) => { const iw = 1 - w; return [iw * iw * ax + 2 * iw * w * cx + w * w * ex, iw * iw * ay + 2 * iw * w * cy + w * w * ey]; };
+      if (who === 2) {
+        const bx = ball.x, by = ball.y, w = sm(K === 'chapeu' ? 0.06 : 0.04, ah, t);
+        const cx = K === 'meialua' ? m.x + sx * 4.4 : 2 * m.x - (bx + tx) / 2, cy = K === 'meialua' ? m.y + sy * 4.4 : 2 * m.y - (by + ty) / 2; // caneta e chapéu: a curva passa no meio dele (o chapéu por cima)
+        const p = bz(bx, by, cx, cy, tx, ty, w), z = K === 'chapeu' ? 2.8 * Math.sin(Math.PI * cl((t - 0.06) / (ah - 0.06), 0, 1)) : 0;
+        return [(p[0] - bx) * (1 - w2), (p[1] - by) * (1 - w2), z];
       }
-      la *= q.sg * DRB_A; fw *= DRB_A; return [q.nx * la + q.ux * fw, q.ny * la + q.uy * fw]; // DRB_A: o disco do boneco tem uns 4 m de largura no campo, a finta precisa ser do tamanho dele para aparecer
+      const ex = tx - q.ux * 0.9, ey = ty - q.uy * 0.9, w = sm(0.02, 0.6, t); // quem dribla: por dentro, pelo lado do marcador que dá para o caminho dele
+      const p = bz(o.x, o.y, m.x - sx * 4.2, m.y - sy * 4.2, ex, ey, w);
+      return [(p[0] - o.x) * (1 - w2), (p[1] - o.y) * (1 - w2), 0];
+    }
+    function drOff(q, ballOf) { // [x, y, altura] em metros
+      const t = q.t, K = q.kind, A = DRB_A; let la = 0, fw = 0, gx = 0, gy = 0;
+      if (ballOf) { // a bola no pé de quem dribla
+        if (K === 'caneta' || K === 'chapeu' || K === 'meialua') return drGeo(q, 2);
+        if (K === 'corte') la = 0.15 * sm(0, 0.16, t) - 0.75 * sm(0.19, 0.38, t) + 0.6 * sm(0.55, 1.0, t);
+        else if (K === 'pedalada') la = -0.7 * sm(0.6, 0.76, t) + 0.7 * sm(0.95, 1.35, t);
+        else if (K === 'elastico') la = 0.42 * sm(0.02, 0.16, t) - 1.07 * sm(0.2, 0.31, t) + 0.65 * sm(0.5, 1.0, t);
+        else { la = -0.55 * sm(0.08, 0.6, t) + 0.55 * sm(0.8, 1.25, t); fw = -0.14 * bp(0.04, 0.22, 0.5, 0.9, t); } // roleta: puxa para trás e para o lado
+      } else if (q.who) {
+        if (K === 'corte') la = 0.32 * sm(0, 0.18, t) - 0.76 * sm(0.2, 0.42, t) + 0.44 * sm(0.55, 1.05, t);
+        else if (K === 'pedalada') la = 0.22 * Math.sin(Math.PI * cl(t / 0.2, 0, 3)) - 0.6 * sm(0.6, 0.8, t) + 0.6 * sm(0.95, 1.4, t);
+        else if (K === 'elastico') la = 0.3 * sm(0.02, 0.18, t) - 0.78 * sm(0.22, 0.38, t) + 0.48 * sm(0.5, 1.05, t);
+        else if (K === 'roleta') { const th = Math.PI * 2 * sm(0.08, 0.62, t), rr = 0.4; // o corpo dá a volta na bola, de costas para o marcador
+          la = -0.55 * sm(0.08, 0.6, t) + 0.55 * sm(0.8, 1.25, t) + rr * Math.sin(th); fw = -0.14 * bp(0.04, 0.22, 0.5, 0.9, t) + rr * (1 - Math.cos(th)); }
+        else return drGeo(q, 1); // caneta, chapéu, meia-lua
+      } else { // o marcador
+        const o = q.o, m = q.m; let vx = 0, vy = 0; if (o && m) { vx = o.x - m.x; vy = o.y - m.y; const v = Math.hypot(vx, vy) || 1; vx /= v; vy /= v; }
+        if (K === 'corte') la = 0.5 * bp(0.05, 0.3, 0.75, 1.3, t);
+        else if (K === 'pedalada') la = 0.17 * Math.sin(Math.PI * (t - 0.08) / 0.2) * bp(0.06, 0.14, 0.55, 0.7, t) + 0.42 * bp(0.6, 0.8, 1.0, 1.5, t);
+        else if (K === 'elastico') la = 0.6 * bp(0.08, 0.26, 0.7, 1.3, t);
+        else if (K === 'roleta') { const e = 0.9 * bp(0.06, 0.3, 0.7, 1.2, t); gx = vx * e; gy = vy * e; } // vai na bola e passa
+        else if (K === 'meialua') { la = -0.22 * bp(0.04, 0.22, 0.5, 0.95, t); const e = -0.6 * bp(0.35, 0.6, 0.9, 1.35, t); gx = vx * e; gy = vy * e; } // vai em quem dribla e vira atrás da bola
+        else { const e = (K === 'chapeu' ? -0.8 : -0.55) * bp(0.25, 0.55, 0.9, 1.4, t); gx = vx * e; gy = vy * e; } // a bola passou: vira e corre atrás
+      }
+      la *= q.sg * A; fw *= A; return [q.nx * la + q.ux * fw + gx, q.ny * la + q.uy * fw + gy, 0]; // DRB_A: o disco do boneco tem uns 4 m de largura no campo, a finta precisa ser do tamanho dele para aparecer
     }
     // A taça no alto do bolo (luz atrás, sobe e balança) e os confetes nas cores do clube e dourado caindo no campo todo
     function festDraw(k) {
@@ -2334,12 +2373,12 @@
       }
       const bdo = ball.owner && ball.owner.dr && ball.owner.dr.who ? drOff(ball.owner.dr, true) : null;
       const tk = toss ? (q => q * q * (3 - 2 * q))(Math.max(0, Math.min(1, (toss.t - toss.d) / TOSS_T))) : 1, tx0 = toss ? toss.x + (ball.x - toss.x) * tk - ball.x : 0, ty0 = toss ? toss.y + (ball.y - toss.y) * tk - ball.y : 0; // a reserva indo até o ponto da cobrança
-      let bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)); const air = toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k * (ball.b11shot && ball.y > GL - 1 && ball.y < GR + 1 ? cl(Math.min(ball.x, L - ball.x) / 5, 0, 1) : 1) : 0;
+      let bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)); const air = bdo && bdo[2] ? bdo[2] * 1.3 * k : toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k * (ball.b11shot && ball.y > GL - 1 && ball.y < GR + 1 ? cl(Math.min(ball.x, L - ball.x) / 5, 0, 1) : 1) : 0;
       // Bola fora do número (19/11, análise externa: "quando encosta no marcador do jogador, cobre parte do número"): bola baixa a menos
       // de BALL_OFF do centro de um boneco é desenhada na borda dele, do lado onde está (só desenho; a bola de verdade não muda)
       let bNudge = false;
       if (air < 3 * k && !toss) { const R = BALL_OFF * k; let best = null, bd2 = R * R;
-        ALL.forEach(p => { if (p.off || p.gone) return; const o = p === ball.owner && bdo ? bdo : null, px = X(p.x + (o ? o[0] : 0)), py = Y(p.y + (o ? o[1] : 0)), d2 = (bx - px) * (bx - px) + (by - py) * (by - py); if (d2 < bd2) { bd2 = d2; best = [px, py]; } });
+        ALL.forEach(p => { if (p.off || p.gone || (bdo && p.dr && !p.dr.who && p.dr.m === p && /caneta|meialua/.test(p.dr.kind) && p.dr.t < 1)) return; const o = p === ball.owner && bdo ? drOff(p.dr) : null, px = X(p.x + (o ? o[0] : 0)), py = Y(p.y + (o ? o[1] : 0)), d2 = (bx - px) * (bx - px) + (by - py) * (by - py); if (d2 < bd2) { bd2 = d2; best = [px, py]; } });
         if (best) { let dx = bx - best[0], dy = by - best[1], d = Math.hypot(dx, dy); if (d < 0.5) { dx = 0.6; dy = 0.8; d = 1; } bx = best[0] + dx / d * R; by = best[1] + dy / d * R; bNudge = true; } }
       // Rastro do chute: uma cauda curta atrás da bola, mais grossa e clara perto dela (dá a força do chute; some quando a bola para)
       if ((ball.fly && ball.fly.shot && !(ball.fly.pre > 0)) || (B11 && ball.b11shot && mode === 'play')) { bt.push([bx, by - air]); if (bt.length > 8) bt.shift(); } else if (bt.length) bt.splice(0, 2);
@@ -2349,7 +2388,7 @@
       if (bd.length > 1) { g.lineCap = 'round'; for (let i = 1; i < bd.length; i++) { const a = i / bd.length; g.strokeStyle = 'rgba(255,255,255,' + (0.5 * a).toFixed(2) + ')'; g.lineWidth = (0.8 + 2.6 * a) * k; g.beginPath(); g.moveTo(bd[i - 1][0], bd[i - 1][1]); g.lineTo(bd[i][0], bd[i][1]); g.stroke(); } g.lineCap = 'butt'; }
       { const hs = Math.min(1, air / (12 * k)); g.fillStyle = 'rgba(0,0,0,' + (0.32 - 0.16 * hs).toFixed(2) + ')'; g.beginPath(); g.ellipse(bx + 1 + air * 0.25, by + 2.5 + air * 0.1, (4 - 1.2 * hs) * k, (2.5 - 0.8 * hs) * k, 0, 0, Math.PI * 2); g.fill(); }
       { const ow = mode === 'play' && !ball.fly && ball.owner;
-        if (ow) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (bdo ? bdo[0] : 0)), Y(ow.y + (bdo ? bdo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); }
+        if (ow) { const oo = bdo ? drOff(ow.dr) : null; g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (oo ? oo[0] : 0)), Y(ow.y + (oo ? oo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); } // o anel acompanha o corpo (na meia-lua a bola vai por outro lado)
         if (!bNudge) { g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); }
         g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(bx, by - air, (5.7 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke(); }
       // Profundidade (16/11): bola baixa encostada no goleiro (a luva que raspa, a defesa) fica por baixo dele: redesenha o goleiro por cima
