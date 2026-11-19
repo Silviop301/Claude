@@ -570,7 +570,7 @@
       // Força por setor no meio do cartão (Silvio 14/11): seu número exato, o do rival em faixa (o relatório do olheiro afina)
       const SX = S.coSectorsVs ? S.coSectorsVs(co, pv) : null, sxRow = (k, nm) => { const r = SX.s[k], cc = r.us > r.hi ? 'up' : r.us < r.lo ? 'dn' : '', me = '<b class="' + cc + '">' + r.us + '</b>', rv = '<b>' + r.lo + '–' + r.hi + '</b>';
         return '<span class="sm-sr">' + (nx.home ? me : rv) + '<small>' + nm + '</small>' + (nx.home ? rv : me) + '</span>'; };
-      const mid = SX ? '<div class="sm-sx">' + sxRow('a', 'ATA') + sxRow('m', 'MEI') + sxRow('d', 'DEF') + '</div>' : '<i class="sm-x">x</i>';
+      const mid = SX ? '<div class="sm-sx">' + sxRow('a', 'ATA') + sxRow('m', 'MEI') + sxRow('d', 'DEF') + '<small class="sm-sxl">' + (SX.read ? 'Rival: estimativa do olheiro' : 'Rival: estimativa (leia o olheiro)') + '</small></div>' : '<i class="sm-x">x</i>';
       card = (nx.cup ? '<small class="sm-rd cup">' + (nx.cup.cont ? contImg(co, 18) : cupImg(nx.cup.name, 18)) + esc(nx.cup.name).toUpperCase() + ' · ' + (nx.cup.grp ? 'GRUPO ' + nx.cup.grp + ' · ' + (nx.cup.k + 1) + 'ª RODADA' : nx.cup.sh.toUpperCase() + (nx.cup.leg ? (nx.cup.leg === 1 ? ' · IDA' : ' · VOLTA') : '')) + ' · ' + (nx.cup.cont ? 'QUARTA' : 'MEIO DA SEMANA') + ' · ' + (nx.neutral ? 'CAMPO NEUTRO' : nx.home ? 'EM CASA' : 'FORA') + '</small>'
         : '<small class="sm-rd">TEMPORADA ' + (U.YEAR0 + co.season) + ' · RODADA ' + nx.round + ' · ' + (nx.home ? 'EM CASA' : 'FORA') + '</small>') + '<div class="sm-vs">' +
         // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
@@ -912,7 +912,7 @@
       '<div class="ldl-sb">' + kit(kH) + crestB(H.id, 'ldl-cr') + '<b class="ldl-tla">' + tla(H, tla(H) === tla(A)) + '<i class="ldl-rc" id="lv-rc-h"></i></b><em id="lv-score">0 <i>x</i> 0</em><b class="ldl-tla">' + tla(A, tla(H) === tla(A)) + '<i class="ldl-rc" id="lv-rc-a"></i></b>' + crestB(A.id, 'ldl-cr') + kit(kA) + '<small class="ldl-clk" id="lv-clock"><i></i>0\'</small>' + legTag(o.m) +
         '<i class="lv-crd" id="lv-cd-h"></i><i class="lv-crd" id="lv-cd-a"></i></div></div>' +
       '<div class="ldl-side"><ul class="lv-feed ldl-ev" id="lv-feed">' + o.feed0 + '</ul>' +
-        '<div class="ldl-qm"><small>QUEM MANDA</small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
+        '<div class="ldl-qm"><small>QUEM MANDA<em>posse · 6 min</em></small><span>' + crestB(H.id, 'ldl-c16') + '<i' + (o.m.home ? '' : ' class="r"') + '><u id="ldl-momb"></u></i>' + crestB(A.id, 'ldl-c16') + '</span></div>' +
         '<div class="ldl-g4" id="ldl-g4">' + Object.keys(S.CO_SHOUT).map(k => '<button data-gr="' + k + '">' + (GR_ICO[k] || '') + '<b>' + S.CO_SHOUT[k].name + '</b><small>' + S.CO_SHOUT[k].sub + '</small></button>').join('') + '</div>' +
         '<button class="ldl-num" id="ldl-num" aria-label="Números do jogo">Números</button><span class="ld-gr"></span>' + o.speedHtml +
         '<button class="ld-gold ldl-stop" id="b-lv-stop">' + o.pause + '<b>Parar e mexer</b></button></div>' +
@@ -2682,12 +2682,14 @@
     const big = T.d === null ? '<b>começa agora</b>' : '<b class="' + (T.d >= 0 ? 'up' : 'dn') + '">' + (T.d >= 0 ? '▲ + ' : '▼ − ') + c.brl(Math.abs(T.d)) + '</b>';
     const R = T.R, em = step >= 2 ? '<em class="dn">' + FIN_STEP[step][1] + '</em>' : R && R.net < 0 && R.left !== null && R.left < R.rest ? '<em class="dn">nesse ritmo zera ' + (R.left < 1 ? 'na próxima rodada' : 'em ' + U.D.plural(R.left, 'rodada', 'rodadas')) + '</em>' :
       T.end === null ? '<em>temporada encerrada</em>' : '<em>fim do ano ~ <b class="' + (T.end < 0 ? 'dn' : T.end >= f.caixa ? 'up' : '') + '">' + c.brl(T.end) + '</b></em>';
+    // O que a previsão conta (19/11, análise externa): o ritmo de hoje, sem prêmio nem venda (S.coFinRitmo)
+    const tn = T.end === null ? '' : '<small class="fn2-tn">TV, patrocínio e ingressos − salários</small>';
     const lbl = T.r0 ? 'DESDE A RODADA ' + (T.r0 + 1) : 'CAIXA NO ANO', stp = step ? '<u class="s' + step + '">' + FIN_STEP[step][0] + '</u>' : '', dot = '<span class="fn2-spw">' + svg + '<i style="left:' + (lastX / W * 100) + '%;top:' + (lastY / H * 100) + '%;background:' + col + '"></i></span>';
     // Computador (desenho aprovado 2026-11-12): o gráfico grande do meio, com a rodada de hoje e a última embaixo
     if (wd) { const now = T.r0 + P.length - 1;
-      return '<div class="fn2-st fn2-tr w"><div class="fn2-th"><small>' + lbl + '</small>' + big + em + stp + '</div>' + dot +
+      return '<div class="fn2-st fn2-tr w"><div class="fn2-th"><small>' + lbl + '</small>' + big + em + tn + stp + '</div>' + dot +
         '<div class="fn2-ax"><span>' + (T.r0 ? 'rodada ' + T.r0 : 'começo') + '</span><span>' + (now > T.r0 ? 'hoje · rodada ' + now : 'hoje') + '</span><span>rodada ' + T.n + '</span></div></div>'; }
-    return '<div class="fn2-st fn2-tr"><small>' + lbl + stp + '</small>' + big + dot + em + '</div>';
+    return '<div class="fn2-st fn2-tr"><small>' + lbl + stp + '</small>' + big + dot + em + tn + '</div>';
   }
   function financas(tab) {
     const c = C(), co = c.co, f = S.coFin(co), folha = S.coFolha(co), teto = S.coFinTeto(co), pct = Math.min(100, Math.round(100 * folha / Math.max(1, teto)));
@@ -2747,7 +2749,7 @@
     ['.fn2-k > div:nth-child(2)', 'Verba', 'Quanto a diretoria deixa gastar em contratações. Nunca passa do que há no caixa.'],
     ['.fn2-k > div:nth-child(3)', 'Folha', 'Os salários de todo o elenco por rodada. Com a barra cheia, ninguém novo cabe no teto.'],
     ['.fn2-tabs', 'Abas', 'Rodada e Temporada: o que entrou e saiu. A seguir: o que ainda vem. Salários: quem ganha mais.'],
-    ['.fn2-tr', 'Trajetória', 'O caixa rodada a rodada. O tracejado mostra onde ele chega no fim do ano nesse ritmo.'],
+    ['.fn2-tr', 'Trajetória', 'O caixa rodada a rodada. O tracejado mostra onde ele chega no fim do ano nesse ritmo: TV, patrocínio, ingressos e rendimento, menos salários e parcelas. Prêmios, bônus e vendas não entram na conta.'],
     ['.fn2-rw', 'Rodada', 'O que entrou e saiu no último jogo: bilheteria, TV, patrocínio e salários.'],
     ['.fn2-ac', 'Acordo e patrocínio', 'A meta combinada com o presidente e o dinheiro da camisa. Toque para ver os detalhes.'],
     ['#fn2-apo', 'Aporte', 'Moedas viram dinheiro no caixa. Parte vira verba para contratar e o resto fica para os salários.'],
@@ -3504,8 +3506,9 @@
     const dvTag = t => (grow && t.dv !== undefined ? '<em class="at">▲ ' + S.CO_AT.short[AK.L[t.dv]] + '</em>' : '');
     const PLN = { ATA: 'a', MEI: 'm', LAT: 'd', ZAG: 'd' };
     const dvBox = t => { if (!grow || t.dv === undefined) return '';
-      const ps = t.who.filter(x => POSN[x]).map(x => '<i data-ln="' + PLN[x] + '">' + x + '</i>').join(''), g = t.who.includes('GOL') && t.dvG !== undefined ? S.CO_AT.names[AK.G[t.dvG]] : '';
-      return '<div class="tr3-dv"><span>▲ ' + S.CO_AT.names[AK.L[t.dv]] + ' ' + ps + '</span>' + (g ? '<span>▲ ' + g + ' <i data-ln="g">GOL</i></span>' : '') + '</div>'; };
+      // Sem siglas no detalhe (19/11, análise externa): o atributo e para quem, por extenso ("Drible de laterais e meias")
+      const ps = t.who.filter(x => POSN[x]).map(x => POSN[x]), pt = ps.length > 1 ? ps.slice(0, -1).join(', ') + ' e ' + ps[ps.length - 1] : ps[0] || '', g = t.who.includes('GOL') && t.dvG !== undefined ? S.CO_AT.names[AK.G[t.dvG]] : '';
+      return '<small class="tr3-lb">COM O TEMPO</small><div class="tr3-dv"><span>▲ ' + S.CO_AT.names[AK.L[t.dv]] + (pt ? ' de ' + pt : '') + '</span>' + (g ? '<span>▲ ' + g + ' do goleiro</span>' : '') + '</div>'; };
     const sug = aux[1] && !done ? aux[1] : null;
     if (!done && !pick) { pick =sug && T[sug].tab === tab ? sug : Object.keys(T).find(k => T[k].tab === tab); } // já abre com um treino na direita (a cena passando)
     const draw = () => {
@@ -3515,7 +3518,7 @@
         '<button class="tm-tip' + (sug ? '' : ' ok') + '" id="tr2-aux"><span class="tm-tip-fw">' + auxFace(co, 'tm-tip-f') + '<em>' + S.coAuxLv(co).k + '</em></span><span><small>AUXILIAR</small><b>' + (sug ? T[sug].name : done ? 'Treino feito' : 'Treine o que é seu') + '</b></span></button></div>' +
         '<div class="tr2-tabs">' + tabs.map(t => '<button data-tt="' + t + '"' + (t === tab ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
         '<div class="tr2-g">' + ks.map(k => '<button class="tr2-c' + (k === pick ? ' on' : '') + (done && k !== done ? ' dis' : '') + '" data-tk="' + k + '"' + (done && k !== done ? ' disabled' : '') + '><span class="tr3-tx">' + (k === sug ? '<span class="tr3-sg">★ AUXILIAR SUGERE</span>' : '') + '<b>' + (done === k ? '✓ ' : '') + T[k].name + '</b><span class="tr2-tg"><em class="' + (T[k].en > 0 ? 'dn' : 'up') + '">' + enTxt(T[k]) + '</em>' + dvTag(T[k]) + '</span></span><span class="tr3-th" data-th="' + k + '"></span></button>').join('') + '</div>' +
-        '<div class="tr2-side"><div class="tr2-d tr3-d">' + (sel ? '<div class="tr3-pit"></div><div class="tr3-di"><b>' + sel.name + '</b><p>' + trTip(pick) + '</p>' + dvBox(sel) + '</div>' : '<p class="tr2-none">Toque num treino</p>') + '</div>' + go + '</div></div>', st => {
+        '<div class="tr2-side"><div class="tr2-d tr3-d">' + (sel ? '<div class="tr3-pit"></div><div class="tr3-di"><b>' + sel.name + '</b><small class="tr3-lb">NO PRÓXIMO JOGO</small><p>' + trTip(pick) + '</p>' + dvBox(sel) + '</div>' : '<p class="tr2-none">Toque num treino</p>') + '</div>' + go + '</div></div>', st => {
         // pranchetas paradas nos cartões e a cena andando no cartão da direita
         const me = ++run, TRC = U.TRC, cl0 = club(co.club), kit = U.LP && U.LP.kitFor && cl0 ? U.LP.kitFor(cl0.name, cl0.id) : null;
         if (TRC) { st.querySelectorAll('[data-th]').forEach(h => TRC.scene(h, h.dataset.th, false, kit));
