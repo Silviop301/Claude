@@ -590,7 +590,7 @@
     const ex = '<div class="sm-ex"><div class="sm-xb"><small class="sm-xt">PRÓXIMOS JOGOS</small>' + (nxL.join('') || '<span class="sm-xr"><b>Última rodada</b></span>') + '</div><div class="sm-xb"><small class="sm-xt">TABELA · PERTO DE VOCÊ</small>' + near + '</div></div>';
     const tip0 = null, tipNew = tip0 && !tip0.seen && !S.coTipUsed(co, tip0);
     // Dep. médico com tratamento livre nesta rodada: o número fica no Clube (auditoria de navegação 19/11: só aparecia lá dentro)
-    const dmN = tut || !S.coDmLeft || !S.coDmLeft(co) ? 0 : Math.min(S.coDmLeft(co), S.coDmWho(co).length);
+    const dmN = (tut || !S.coDmLeft || !S.coDmLeft(co) ? 0 : Math.min(S.coDmLeft(co), S.coDmWho(co).length)) + (tut ? 0 : ctPend(co));
     const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : k === 'time' && tipNew ? '<i class="tm-dot">1</i>' : k === 'clube' && dmN ? '<i class="tm-dot">' + dmN + '</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + ex + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
@@ -1596,7 +1596,7 @@
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
     const est = S.coEst && U.EST ? S.coEst(co) : null, aux = S.coAux(co), auxLv = S.coAuxLv(co), dm = S.coDm(co);
-    const dmN = S.coDmLeft(co) ? Math.min(S.coDmLeft(co), S.coDmWho(co).length) : 0;
+    const dmN = S.coDmLeft(co) ? Math.min(S.coDmLeft(co), S.coDmWho(co).length) : 0, ctN = ctPend(co);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     // x: um detalhe a mais que só aparece no computador (#ld.wide, desenho aprovado 2026-11-11)
     const tile = (id, k, t, v, sub, cc, x) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small>' + (x ? '<i class="kb2-x">' + x + '</i>' : '') + '</span></button>';
@@ -1605,7 +1605,7 @@
     const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + (z0 ? '' : ' · hoje ' + pos + 'º');
     show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
       '<div class="kb2-g' + (est ? ' g3' : '') + '">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '', 'folha por rodada <b>' + c.brl(S.coFolha(co)) + '</b>') +
-        tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '', expX) +
+        (tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '', expX)).replace('>', '>' + (ctN ? '<i class="tm-dot">' + ctN + '</i>' : '')) +
         tile('', 'tro', 'Troféus', co.titles.length, co.titles.length === 1 ? 'título' : 'títulos', '', co.titles.length ? '' : 'a taça aparece aqui quando ganhar') +
         tile('', 'hall', est ? 'Hall' : 'Hall do técnico', (co.season + 1) + 'ª', 'temporada de carreira') +
         (est ? '<button class="kb2-t kb2-es" id="kb2-est" data-k="est"><b>Estádio</b>' + estThumb(co, est) + '<span><em>' + milK(S.coEstCap(est)) + '</em><small>lugares</small>' +
@@ -2960,6 +2960,12 @@
   // último ano (sem renovar, saem). Até 3 linhas, do mais forte ao mais fraco; quem vai aposentar de qualquer jeito
   // (36 anos ou mais) e quem já renovou não entram. Ver elenco abre o Elenco no primeiro da lista.
   const CT_TAB = { GOL: 0, ZAG: 1, LAT: 1, MEI: 2, ATA: 3 };
+  // Titulares com contrato no último ano nas 5 últimas rodadas (a mesma lista do ctWarn): bolinha no Clube e no Elenco até
+  // renovar (Silvio 19/11: bolinha só para o que pede uma ação)
+  function ctPend(co) {
+    if (!co.ss || co.ss.rounds.length - co.ss.i > 5) return 0;
+    return co.squad.filter(p => (co.xi || []).includes(p.id) && p.ct <= 1 && p.age < 36).length;
+  }
   function ctWarn(co) {
     if (!co.ss || co.ss.rounds.length - co.ss.i > 5 || co.ctw === co.season) return false;
     const L = co.squad.filter(p => (co.xi || []).includes(p.id) && p.ct <= 1 && p.age < 36).sort((a, b) => b.ovr - a.ovr);
