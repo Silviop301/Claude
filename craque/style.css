@@ -11067,3 +11067,5 @@ button.coin-pill .cp-plus { display: inline-grid; place-items: center; width: 20
 .tbmv.eq { height: 2px; width: 7px; border-radius: 1px; background: rgba(185, 201, 191, .45); }
 .tb-r .tbmv { width: 8px; height: 6px; } .tb-r .tbmv.eq { width: 6px; height: 2px; }
 .me > .tbmv.up { background: #15964A; } .me > .tbmv.dn { background: #C9303A; } .me > .tbmv.eq { background: rgba(19, 32, 26, .35); }
+/* Bolinha do tratamento livre no cartão do Dep. médico do Clube (2026-11-19) */
+.kb2-pr#kb2-dm { position: relative; } #kb2-dm > .tm-dot { right: 10px; top: 10px; text-align: center; }
