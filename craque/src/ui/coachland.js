@@ -553,11 +553,12 @@
     const inN = tut ? 0 : S.coMktInbox(co).filter(o => !o.seen).length - (inPop ? 1 : 0); // só desconta a proposta que abriu agora (outra janelinha deixava o aviso em -1)
     const nwN = tut || !S.coWorldNew ? 0 : (S.coWorldSync(co), S.coWorldNew(co));
     const t = S.coTable(co), me = t.find(x => x.me), pos = S.coPos(co), B = co.board, conf = Math.round(B.conf);
+    const z0 = !t.some(x => x.j); // antes da 1ª rodada ninguém tem posição (o novato via "1º · 0 pts" sem ter jogado, 19/11)
     const f5 = f => { const a = (f || '').split('').slice(-5); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5 sm-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const meta = B.goal.k === 'titulo' ? 'SER CAMPEÃO' : 'ATÉ O ' + ord(B.goal.pos);
     const top = '<div class="sm-h' + (B.ult ? ' ult' : '') + '"><button class="tcr-back" id="sm-back" aria-label="Início">' + BK + '</button>' +
-      '<b>' + ord(pos) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
+      '<b>' + (z0 ? '–' : ord(pos)) + '</b><small>' + me.p + ' pts</small>' + f5(me.f) +
       '<em class="sm-tag' + (pos > (B.goal.k === 'titulo' ? 1 : B.goal.pos) ? ' hi' : '') + '" title="' + esc(S.CO_GOAL_TXT[B.goal.k]) + '">META · ' + meta + '</em><span class="ld-gr sm-mu">' + (U.discHtml ? U.discHtml('sm') : '') + '</span>' + // disco da música no meio do topo (2026-11-11)
       (B.ult ? '<em class="sm-tag ult">ULTIMATO · VENÇA ' + B.ult.need + ' DE ' + B.ult.of + '</em>' : '') +
       // caixa no topo (Silvio 2026-11-10, como no mercado); com ultimato a etiqueta já diz como a diretoria está e a barra sai para caber
@@ -575,7 +576,7 @@
         // mandante à esquerda (Silvio, 10/11: "em jogo fora de casa eu quero meu escudo na direita"), como no placar do jogo
         (nx.home ? side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name)) + mid + side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name))
           : side(them.club, vc.short || vc.name, them.form + ' · ' + esc(S.CO_STY[them.style].name)) + mid + side(co.club, cl.short || cl.name, co.form + ' · ' + esc(S.CO_STY[co.style].name))) + '</div>' +
-        (nx.cup ? cupPath(co) : rv ? '<small class="sm-rv">' + ord(rpos) + ' · ' + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
+        (nx.cup ? cupPath(co) : rv ? '<small class="sm-rv">' + (z0 ? '' : ord(rpos) + ' · ') + rv.p + ' pts' + f5(rv.f) + '</small>' : '');
       const tr = S.coTrainNow(co) ? S.CO_TRAIN[co.train.k] : null, sc = S.coScoutNow(co);
       wk = '<div class="sm-wk"><button class="sm-w' + (tr ? ' ok' : '') + '" id="ld-tr"><small>TREINO</small><b>' + (tr ? '✓ ' + esc(tr.name) : 'Escolher') + '</b>' + (tr ? '' : '<i class="tm-dot">1</i>') + '</button>' +
         '<button class="sm-w' + (sc ? ' ok' : '') + '" id="ld-ol"><small>ANALISAR RIVAL</small><b>' + (sc ? '✓ Relatório lido' : 'Ver o ' + esc(vc.short || vc.name)) + '</b></button></div>';
@@ -971,7 +972,7 @@
     if (mo.run && !m.us.shout) { const r = mo.run; mo.run = null; const ok = MOM_OK[r.k](momWin(m, r.from, m.min));
       m.ev.push({ m: m.min, t: 'momento', s: 'us', p: ok[1], ok: ok[0] });
       planToast(ok[0] ? 'ok' : 'no', ok[0] ? 'FUNCIONOU' : 'NÃO DEU', ok[1]); }
-    if (mo.n >= MOM_MAX || m.us.shout || m.min - mo.at < MOM_GAP || m.min < 8 || m.min > 87 || x.open || document.getElementById('ld-pop') || document.getElementById('mom-c')) return;
+    if (mo.n >= MOM_MAX || m.us.shout || m.min - mo.at < MOM_GAP || m.min < 8 || m.min > 87 || x.open || document.getElementById('ld-pop') || document.getElementById('ld-tu') || document.getElementById('mom-c')) return;
     if (m.min >= 44 && m.min <= 47) return; // perto do intervalo não
     const q = momPick(m); if (!q) return;
     mo.n++; mo.at = m.min; mo.done[q.k] = 1;
@@ -994,7 +995,7 @@
     c._t = setInterval(() => {
       if (!c.isConnected) return clearInterval(c._t);
       if (x.m.done) return momClose();
-      if (x.open || document.getElementById('ld-pop')) return;
+      if (x.open || document.getElementById('ld-pop') || document.getElementById('ld-tu')) return;
       left -= 100; if (u) u.style.width = Math.max(0, left / T * 100) + '%';
       if (left <= 0) momClose();
     }, 100);
@@ -2159,7 +2160,7 @@
     const row = (x, i) => {
       const way = x.k === 'l' ? '<span class="nw-c">sem clube · ' + x.age + ' anos</span>' : (x.from ? crest(x.from, 'nw-cr') + nm(x.from) : '<span class="nw-c">sem clube</span>') + '<s>›</s>' + crest(x.to, 'nw-cr') + nm(x.to) + (x.up ? '<em title="chegou para ser titular">▲</em>' : '');
       const note = x.me === 1 ? 'seu clube' : x.me === 2 ? 'ex seu clube' : S.coWorldObs(co, x) ? 'observado' : '';
-      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-nr="' + i + '"><i>' + x.pos + '</i><span><b><span class="nw-n">' + esc(x.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b><small>' + way + '</small></span>' +
+      return '<button class="mk-r' + (i === sel ? ' on' : '') + '" data-nr="' + i + '"><i>' + S.coPosAb((x.id && S.coMktFind(co, x.id)) || { pos: x.pos, id: x.id || x.n }) + '</i><span><b><span class="nw-n">' + esc(x.n) + '</span>' + (note ? '<u>' + note + '</u>' : '') + '</b><small>' + way + '</small></span>' +
         '<div class="nw-tc"><strong>' + (x.k === 'b' ? '?' : x.tr ? 'troca' : x.v ? c.brl(x.v) : 'grátis') + '</strong><em class="nw-tag ' + x.k + '">' + NW_TAG[x.k] + '</em></div></button>'; };
     const none = all.length ? (nwFlt === 2 ? 'Seu clube ainda não fez negócio.' : nwFlt === 3 ? 'Nada sobre quem você observa.' : 'Nada aqui. Veja em Tudo.') : win.k ? 'Nenhum negócio fechado ainda.' : win.next ? 'Sem notícias. A janela abre na rodada ' + win.next + '.' : 'Sem notícias nesta temporada.';
     const cur = R[sel], p = cur && cur.id ? S.coMktFind(co, cur.id) : null, goT = !cur ? 'Ver ficha' : p ? 'Ver ficha' : cur.to === co.club || (cur.k === 'b' && cur.from === co.club) ? 'No seu elenco' : 'Sem ficha';

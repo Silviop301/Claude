@@ -1267,7 +1267,7 @@
       gen(X, f) { const b = X.on.find(o => scSty(X.them, o.i) === 'costas'); if (!b) return null;
         return { i: b.i, pw: 3 + b.dv[4] / 3, t: scLast(b.p) + ' corre nas costas', d: 'Vive na linha do impedimento esperando o lançamento.' }; },
       ok: s => scHas(s, 'cobre') || (s.lnh && s.lnh.d < 0) },
-    ala: { ty: 'c', fx: 0.05, ans: 'Ponta, Nas costas ou o estilo Contra-ataque',
+    ala: { ty: 'c', fx: 0.05, ans: 'Ponta ou Nas costas nas Funções, ou o estilo Contra-ataque',
       gen(X, f) { const b = X.on.find(o => scSty(X.them, o.i) === 'ala'); if (!b) return null;
         return { i: b.i, pw: 2 - b.dv[3] / 3, t: 'Lateral ' + scLast(b.p) + ' vive no ataque', d: 'Sobra espaço nas costas dele.' }; },
       ok: s => scHas(s, 'ponta') || scHas(s, 'costas') || s.style === 'contra' },
