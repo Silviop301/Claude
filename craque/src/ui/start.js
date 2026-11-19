@@ -24,7 +24,7 @@
   // ingressos (bola, taça, medalha de 1º, boneco). Desligada fica apagada em cinza; ligada, colorida e com o nome em ouro
   // Ranking fora da versão 1.0 (Silvio, 2026-11-09): some da home e da barra de baixo; a tela e o servidor continuam no código
   const RANK_ON = false;
-  const BETA_ATE = new Date(2026, 11, 1).getTime(); // selo BETA ao lado do logo da home até o lançamento (01/12/2026, hora do aparelho); some sozinho
+  // selo BETA ao lado do logo da home até o lançamento (U.isBeta, 01/12/2026 em settings.js); some sozinho e a versão vira 1.0
   const TABS = [['home', 'Jogar', '⚽'], ['ranking', 'Ranking', '🥇'], ['profile', 'Perfil', '👨']].filter(x => RANK_ON || x[0] !== 'ranking');
   U.tabs = cur => {
     const dot = U.ITEMS && U.ITEMS.streak().cells.some(c => c.claim); // prêmio da sequência para pegar: fica no Perfil
@@ -126,8 +126,8 @@
       const c = sv.co, cl = c.club && club(c.club), ss = c.ss, at = svYear(sv) + (ss && !ss.done ? ' · rodada ' + Math.min(ss.i + 1, ss.rounds.length) : !c.club ? ' · escolhendo clube' : ' · pré-temporada');
       return '<button class="hw-r' + (last && last.i === i ? ' on' : '') + '" data-vg="treinador:' + i + '">' + cr(cl && cl.id) + '<span><b>' + esc(cl ? cl.short || cl.name : c.name) + '</b><small>' + (cl ? esc(c.name) + ' · ' : '') + at + '</small></span>' + PLAY_SVG + '</button>'; };
     const more = LAND_MORE.map(([k, l, d]) => '<button class="hl-mr" data-hl="' + k + '">' + lineSvg(d) + '<b>' + l + '</b></button>').join('');
-    return '<div class="hlw hl hl-x">' + bdTag() + '<div class="hw-top">' + (U.novidadesLand ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '<span></span>') +
-      '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b><div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + '</div></div>' +
+    return '<div class="hlw hl hl-x">' + bdTag() + '<div class="hw-top">' + (U.novidadesLand ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.verTxt() + '">' + U.emo('📣', 'md') + '<b>' + U.verTxt() + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '<span></span>') +
+      '<b class="hl-logo">CLIMBIX' + (U.isBeta() ? '<i class="hl-beta">BETA</i>' : '') + '</b><div class="hl-tops">' + (U.COINS ? U.COINS.pill('', 'hl-coins') : '') + '</div></div>' +
       '<div class="hw-left">' + card + '<div class="hl-mds"><button class="hl-md hl-treinador" data-mode="treinador" id="b-new-co"><b>Treinador</b></button><button class="hl-md hl-jogador off" disabled aria-disabled="true"><b>Jogador</b><small>Em breve</small></button></div></div>' +
       '<div class="hw-right"><div class="hw-sv"><small class="hw-l">SUAS CARREIRAS · TREINADOR</small>' + sl.map(row).join('') + '</div><div class="hw-bt"><div class="hl-mrs">' + more + '</div>' + discHtml() + '</div></div></div>';
   }
@@ -148,12 +148,12 @@
     // o convite "Ganhe 36 moedas", que abre a criação da conta)
     const bg = !so && U.LP && U.LP.sim ? '<div class="hl-bg" aria-hidden="true"><canvas id="hl-cv"></canvas></div>' : '';
     const gift = !so && !window.CLIMBIX_SOLO && U.cloud && U.cloudStatus && !U.cloudStatus() && !(U.COINS && U.COINS.has('boas-vindas'));
-    const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : ' hl-e') + '">' + bg + '<b class="hl-logo">CLIMBIX' + (Date.now() < BETA_ATE ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
+    const html = U.LD.wroom && U.LD.wroom() && !so ? homeW(last) : '<div class="hl hl-x' + (so ? ' hl-so' : ' hl-e') + '">' + bg + '<b class="hl-logo">CLIMBIX' + (U.isBeta() ? '<i class="hl-beta">BETA</i>' : '') + '</b>' +
       (so ? '' : '<p class="hl-nav"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>Joga no navegador · sem baixar nada</p>') + // quem chega pelo Instagram pergunta onde baixar (Silvio, 15/11)
       bdTag() + '<div class="hl-tops">' +
       (U.inApp && U.inApp() ? '<button class="hl-nv hl-ins hl-iab" id="hl-iab"><span class="hl-iab-ic">' + U.inAppIcon + '</span><span><b>Abrir no navegador</b><small>pra instalar e salvar</small></span></button>' : '') + // dentro do Instagram/TikTok (install.js)
       (U.installCan && U.installCan() ? '<button class="hl-nv hl-ins" id="hl-ins"><img src="' + U.installIcon + '" width="34" height="34" alt=""><b>Instalar o app</b></button>' : '') +
-      (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.VERSION + '">' + U.emo('📣', 'md') + '<b>' + U.VERSION + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
+      (U.novidadesLand && !so ? '<button class="hl-nv" id="hl-nv" aria-label="Novidades da versão ' + U.verTxt() + '">' + U.emo('📣', 'md') + '<b>' + U.verTxt() + ' · Novidades</b>' + (U.newsNew() ? '<i aria-hidden="true"></i>' : '') + '</button>' : '') + // notas de versão (settings.js); o pontinho some depois de abrir
       (gift ? '<button class="hl-gift" id="hl-gift">' + U.COINS.svg + '<span><b>GANHE 36 MOEDAS</b><small>Crie sua conta grátis</small></span></button>' : U.COINS ? U.COINS.pill('', 'hl-coins') : '') + '</div>' +
       cont + '<div class="hl-mds">' + modes + '</div><div class="hl-mrs">' + more + '</div>' + discHtml() + (last && U.CHAMA && U.COINS ? U.CHAMA.homeCard() : '') + '</div>'; // chama do técnico só para quem já tem carreira (ui/chama.js)
     U.LD.show(html, st => {

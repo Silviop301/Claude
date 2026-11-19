@@ -23,6 +23,11 @@
 
   // Versão do jogo (aparece nas Configurações e decide quando mostrar as novidades)
   const VERSION = '1.0';
+  // 2026-11-19 (Silvio: "ou é beta ou 1.0"): até o lançamento o jogador vê "Beta 0.9"; em 01/12 vira "1.0" sozinho, junto com o selo BETA da home.
+  // VERSION continua '1.0' só como chave interna do aviso antigo (whatsNew); o que aparece na tela é verTxt().
+  const BETA_ATE = new Date(2026, 11, 1).getTime(); // 01/12/2026, hora do aparelho
+  const isBeta = () => Date.now() < BETA_ATE;
+  const verTxt = () => (isBeta() ? 'Beta 0.9' : '1.0');
   const NEWS_KEY = 'climbix-novidades';
   // NEWS_ID = a última atualização (NEWS_LAND[0].id): quem não viu esta ganha o pontinho e, se já tinha carreira, o aviso uma vez (newsPop)
   const NEWS_ID = '1.0-1611';
@@ -71,7 +76,7 @@
       const link = (id, ic, t) => '<button class="cfg-link" id="' + id + '">' + U.emo(ic, 'sm') + '<span>' + t + '</span>' + U.ICON['chevron-right'] + '</button>';
       w.innerHTML = '<div class="cfg cfg2" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
         conta + GROUPS().map(g => '<div class="cfg-grp"><h3>' + g.t + '</h3><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
-        '<div class="cfg-links">' + link('cfg-fb', '💬', 'Dar opinião sobre o jogo') + link('cfg-news', '📣', 'Novidades da versão ' + VERSION) + '</div>' +
+        '<div class="cfg-links">' + link('cfg-fb', '💬', 'Dar opinião sobre o jogo') + link('cfg-news', '📣', 'Novidades da versão ' + verTxt()) + '</div>' +
         // Crédito exigido pela licença dos emojis
         '<p class="cfg-credit">Emojis: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)</p></div>';
       w.querySelector('.cfg').scrollTop = y;
@@ -140,7 +145,7 @@
   // rolar; a mais nova primeiro, e com mais de uma as setas do topo trocam. `dt` = data por extenso (vazio não mostra)
   // 2026-11-16 (Silvio: "mensagem na tela de quem ta jogando o beta sobre o que mudou" + "a opção de mandar sugestão"):
   // cada atualização do beta = uma entrada com `id` (NEWS_ID), `pop` (6 destaques do aviso da home) e `fb` (link Mandar sugestão)
-  const NEWS_LAND = [{ v: '1.0', id: '1.0-1611', dt: '16 de novembro', tag: 'ATUALIZAÇÃO · 16 DE NOVEMBRO', h: 'O que mudou', art: '📣',
+  const NEWS_LAND = [{ v: '0.9', id: '1.0-1611', dt: '16 de novembro', tag: 'ATUALIZAÇÃO · 16 DE NOVEMBRO', h: 'O que mudou', art: '📣',
     p: 'Valeu por jogar o beta! Cada ideia de vocês vira melhoria aqui.', s: 'Bom jogo, professor!', fb: 1,
     pop: [['⭐', 'Notas do EA FC', 'Jogadores reais com a nota do EA FC 26.'], ['🎯', 'Chute com curva', 'Golaços de fora da área e de falta.'],
       ['🔥', 'Chama do técnico', 'Jogue todo dia e ganhe moedas.'], ['⏩', 'Só resultado', 'O placar corre em 5 segundos.'],
@@ -332,5 +337,5 @@
   }
   const termosLand = (tab, back) => legalLand('termos', tab, back), privacidadeLand = (tab, back) => legalLand('privacidade', tab, back);
 
-  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, novidadesLand, newsNew, newsPop, termosLand, privacidadeLand });
+  Object.assign(U, { settings, settingsLand, whatsNew, VERSION, BETA_ATE, isBeta, verTxt, novidadesLand, newsNew, newsPop, termosLand, privacidadeLand });
 })();
