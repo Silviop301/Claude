@@ -1830,7 +1830,7 @@
       { const ld = cv.closest && cv.closest('#ld'); SK = Math.max(1, (ld && parseFloat(getComputedStyle(ld).getPropertyValue('--ldk'))) || 1); } // só cresce: no celular (palco ≤ 1) fica como era
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     }
-    function lines() {
+    function lines(noGoal) {
       // As linhas são simétricas: desenha sem espelhar (espelhado, as larguras sairiam negativas)
       const XL = x => PAD + x / L * (W - 2 * PAD);
       g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2;
@@ -1841,7 +1841,7 @@
       g.strokeRect(XL(0), Y(13.85), bw, Y(54.15) - Y(13.85)); g.strokeRect(XL(L) - bw, Y(13.85), bw, Y(54.15) - Y(13.85));
       g.strokeRect(XL(0), Y(24.85), sw, Y(43.15) - Y(24.85)); g.strokeRect(XL(L) - sw, Y(24.85), sw, Y(43.15) - Y(24.85));
       // Os gols: traves e rede atrás da linha; no gol a rede estufa onde a bola bateu e balança até parar
-      goalDraw(0, false); goalDraw(1, false); g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2; // a meia-lua e os quartos de círculo voltam ao branco das linhas (o gol deixava o traço branco e grosso)
+      if (!noGoal) { goalDraw(0, false); goalDraw(1, false); } g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2; // a meia-lua e os quartos de círculo voltam ao branco das linhas (o gol deixava o traço branco e grosso)
       // Marca do pênalti, arco da área (a 9,15 m da marca, só a parte fora da área), quartos de círculo e bandeirinhas de escanteio
       const rx = XL(9.15) - XL(0), ry = Y(9.15) - Y(0), a0 = Math.acos(5.5 / 9.15);
       g.fillStyle = 'rgba(255,255,255,.6)'; [11, L - 11].forEach(x => { g.beginPath(); g.arc(XL(x), Y(34), 1.6, 0, Math.PI * 2); g.fill(); });
@@ -1912,6 +1912,19 @@
       g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0, y1); g.stroke(); // o travessão visto de cima
       g.fillStyle = '#fff'; g.beginPath(); g.arc(x0, y0, 2.8, 0, Math.PI * 2); g.arc(x0, y1, 2.8, 0, Math.PI * 2); g.fill();
     }
+    // Figurinha do boneco de pé (ver `dot`): o mesmo desenho do anel, da camisa, do contorno e do número, num ponto (x, y) da figurinha
+    function sprBody(p, x, y, r, k, me, kt, shirt, edge, e, num, dark, txt) {
+      { const rr = r + 2.6 * k, col = e > 55 ? '#7BE3A0' : e >= 30 ? '#F2C230' : '#FF6B6B';
+        g.lineWidth = 2.4 * k; g.strokeStyle = 'rgba(7,17,12,.55)'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.stroke();
+        g.strokeStyle = col; g.lineCap = 'round'; g.beginPath(); g.arc(x, y, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, e / 100)); g.stroke(); g.lineCap = 'butt'; }
+      g.fillStyle = shirt; g.strokeStyle = edge; g.lineWidth = 1.6 * k;
+      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+      if (!me && p.r !== 'GK' && kt.pat) { shirtPat(x, y, r, kt.pat, false, kt[0]); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); }
+      g.stroke();
+      g.font = '800 ' + Math.round((me ? 14 : num.length > 1 ? 12.5 : 14) * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.lineJoin = 'round'; g.lineWidth = 2.6 * k; g.strokeStyle = dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.8)'; g.strokeText(num, x, y + 0.8 * k);
+      g.fillStyle = txt; g.fillText(num, x, y + 0.8 * k);
+    }
     function dot(p, k) {
       // A batida: no chute o corpo recua um palmo (arma a perna) e vai na bola; no passe, só o toque para a frente
       let ko = 0; if (p.kk) { const q = p.kk, t = q.t; if (t < q.pre) ko = -0.45 * (t / q.pre); else { const v = (t - q.pre) / 0.26, a0 = q.pre ? -0.45 : 0; ko = v < 0.22 ? a0 + (1 - a0) * v / 0.22 : 1 - (v - 0.22) / 0.78; } ko *= q.pw; }
@@ -1925,26 +1938,47 @@
       g.globalAlpha = p.stun > 0 ? 0.65 : 1;
       const kt = p.r === 'GK' ? [KT.gk[p.side], '#1D1D1F'] : p.side ? KT.opp : KT.mine, shirt = me ? '#F2C230' : kt[0];
       const edge = me ? '#0F3D2A' : cdist(kt[1], kt[0]) > 120 ? kt[1] : lum(kt[0]) > 0.55 ? '#1D1D1F' : '#F4F1E8';
-      if (!me && !p.down) {
-        const e = enOf(p), rr = r + 2.6 * k, col = e > 55 ? '#7BE3A0' : e >= 30 ? '#F2C230' : '#FF6B6B';
-        g.lineWidth = 2.4 * k; g.strokeStyle = 'rgba(7,17,12,.55)'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.stroke();
-        g.strokeStyle = col; g.lineCap = 'round'; g.beginPath(); g.arc(x, y, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, e / 100)); g.stroke(); g.lineCap = 'butt';
-      }
-      g.fillStyle = shirt; g.strokeStyle = edge; g.lineWidth = 1.6 * k;
-      g.beginPath(); if (p.down) g.ellipse(x, y, r * (p.dva != null ? 1.5 : 1.2), r * 0.62, p.dva != null ? (p.dva ? Math.PI / 2 : 0) : 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.fill();
-      // o desenho da camisa troca o caminho atual (faixa, fundo do número): refaz o contorno do disco antes do traço,
-      // senão a borda sai no polígono da faixa, fora do disco, por cima do anel de energia
-      if (!me && p.r !== 'GK' && kt.pat) { shirtPat(x, y, r, kt.pat, p.down, kt[0]); g.beginPath(); if (p.down) g.ellipse(x, y, r * (p.dva != null ? 1.5 : 1.2), r * 0.62, p.dva != null ? (p.dva ? Math.PI / 2 : 0) : 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); }
-      g.stroke();
-      // Bico: para onde ele olha (corre ou vira para a bola), na borda do disco
-      if (!p.down) { const fx = mir() ? -p.fx : p.fx, fy = p.fy, fm = Math.hypot(fx, fy) || 1, ux = fx / fm, uy = fy / fm, a = r + 3.6 * k, b = r - 0.6 * k, w = 2.6 * k;
-        g.fillStyle = me ? '#F2C230' : '#FBF8EF'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 0.9 * k;
-        g.beginPath(); g.moveTo(x + ux * a, y + uy * a); g.lineTo(x + ux * b - uy * w, y + uy * b + ux * w); g.lineTo(x + ux * b + uy * w, y + uy * b - ux * w); g.closePath(); g.fill(); g.stroke(); }
-      // Número sempre em branco ou preto (o que tiver mais contraste com a camisa) e com contorno: lê em qualquer uniforme
       const num = String(p.num || ''), dark = me || lum(shirt) > 0.5, txt = dark ? '#0B120E' : '#FFFFFF';
-      g.font = '800 ' + Math.round((me ? 14 : num.length > 1 ? 12.5 : 14) * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.lineJoin = 'round'; g.lineWidth = 2.6 * k; g.strokeStyle = dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.8)'; g.strokeText(num, x, y + 0.8 * k);
-      g.fillStyle = txt; g.fillText(num, x, y + 0.8 * k);
+      // Celular fraco (19/11): de pé, o boneco (anel de energia, camisa, contorno e número) sai de uma figurinha guardada em vez de
+      // ~4 traços redondos e 2 textos por boneco a cada quadro (era o que mais pesava depois da luz). Mesmo desenho: a figurinha é
+      // feita com o mesmo código, na resolução da tela, e a energia anda de meio em meio ponto. Caído ou você: desenha como sempre
+      const sprOk = !me && !p.down && SPR, eQ = sprOk ? Math.round(enOf(p) * 2) / 2 : 0;
+      if (sprOk) {
+        const key = shirt + edge + (p.r !== 'GK' && kt.pat ? kt.pat.join() : '') + '|' + num + '|' + eQ + '|' + (r * dpr).toFixed(2) + '|' + (k * dpr).toFixed(3);
+        let sp = SPR.get(key);
+        if (!sp) {
+          if (SPR.size > 200) SPR.clear(); // teto de memória (~25 KB cada)
+          const half = Math.ceil((r + 4 * k) * dpr) + 2; sp = document.createElement('canvas'); sp.width = sp.height = half * 2; sp.h = half / dpr;
+          const g0 = g; g = sp.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+          try { sprBody(p, half / dpr, half / dpr, r, k, me, kt, shirt, edge, eQ, num, dark, txt); } finally { g = g0; }
+          SPR.set(key, sp);
+        }
+        const a0 = g.globalAlpha; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(sp, (x - sp.h) * dpr, (y - sp.h) * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = a0;
+        // Bico: para onde ele olha (corre ou vira para a bola), na borda do disco
+        if (!p.down) { const fx = mir() ? -p.fx : p.fx, fy = p.fy, fm = Math.hypot(fx, fy) || 1, ux = fx / fm, uy = fy / fm, a = r + 3.6 * k, b = r - 0.6 * k, w = 2.6 * k;
+          g.fillStyle = me ? '#F2C230' : '#FBF8EF'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 0.9 * k;
+          g.beginPath(); g.moveTo(x + ux * a, y + uy * a); g.lineTo(x + ux * b - uy * w, y + uy * b + ux * w); g.lineTo(x + ux * b + uy * w, y + uy * b - ux * w); g.closePath(); g.fill(); g.stroke(); }
+      } else {
+        if (!me && !p.down) {
+          const e = enOf(p), rr = r + 2.6 * k, col = e > 55 ? '#7BE3A0' : e >= 30 ? '#F2C230' : '#FF6B6B';
+          g.lineWidth = 2.4 * k; g.strokeStyle = 'rgba(7,17,12,.55)'; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.stroke();
+          g.strokeStyle = col; g.lineCap = 'round'; g.beginPath(); g.arc(x, y, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, e / 100)); g.stroke(); g.lineCap = 'butt';
+        }
+        g.fillStyle = shirt; g.strokeStyle = edge; g.lineWidth = 1.6 * k;
+        g.beginPath(); if (p.down) g.ellipse(x, y, r * (p.dva != null ? 1.5 : 1.2), r * 0.62, p.dva != null ? (p.dva ? Math.PI / 2 : 0) : 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); g.fill();
+        // o desenho da camisa troca o caminho atual (faixa, fundo do número): refaz o contorno do disco antes do traço,
+        // senão a borda sai no polígono da faixa, fora do disco, por cima do anel de energia
+        if (!me && p.r !== 'GK' && kt.pat) { shirtPat(x, y, r, kt.pat, p.down, kt[0]); g.beginPath(); if (p.down) g.ellipse(x, y, r * (p.dva != null ? 1.5 : 1.2), r * 0.62, p.dva != null ? (p.dva ? Math.PI / 2 : 0) : 0.5, 0, Math.PI * 2); else g.arc(x, y, r, 0, Math.PI * 2); }
+        g.stroke();
+        // Bico: para onde ele olha (corre ou vira para a bola), na borda do disco
+        if (!p.down) { const fx = mir() ? -p.fx : p.fx, fy = p.fy, fm = Math.hypot(fx, fy) || 1, ux = fx / fm, uy = fy / fm, a = r + 3.6 * k, b = r - 0.6 * k, w = 2.6 * k;
+          g.fillStyle = me ? '#F2C230' : '#FBF8EF'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 0.9 * k;
+          g.beginPath(); g.moveTo(x + ux * a, y + uy * a); g.lineTo(x + ux * b - uy * w, y + uy * b + ux * w); g.lineTo(x + ux * b + uy * w, y + uy * b - ux * w); g.closePath(); g.fill(); g.stroke(); }
+        // Número sempre em branco ou preto (o que tiver mais contraste com a camisa) e com contorno: lê em qualquer uniforme
+        g.font = '800 ' + Math.round((me ? 14 : num.length > 1 ? 12.5 : 14) * k) + 'px "Barlow Condensed", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.lineJoin = 'round'; g.lineWidth = 2.6 * k; g.strokeStyle = dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.8)'; g.strokeText(num, x, y + 0.8 * k);
+        g.fillStyle = txt; g.fillText(num, x, y + 0.8 * k);
+      }
       g.globalAlpha = 1;
       // Amarelado (Treinador: inf.yc diz quem tem amarelo neste jogo): cartãozinho no ombro, depois que o juiz mostrou
       if (p.inf && p.inf.yc && p.inf.yc() && !(refFx && refFx.p === p) && !(foulPend && foulPend.o.num === p.num && foulPend.o.side === p.side)) card(x + r * 0.95, y - r * 0.15, '#F2C230', k * 0.62, 0.2);
@@ -2139,7 +2173,7 @@
         else if (REF.sig === 'alto') { g.moveTo(x, y); g.lineTo(x, y - 13 * k); }
         g.stroke(); g.lineCap = 'butt'; }
     }
-    let vig = null, cam = { z: 1, x: 0, y: 0, cl: 0 };
+    let vig = null, bgC = null, SPR = typeof document !== 'undefined' && window.Map ? new Map() : null, cam = { z: 1, x: 0, y: 0, cl: 0 };
     // Câmera da bola parada: chega perto da área do pênalti e volta depois do lance (o resto do tempo, o campo todo)
     // Aviso do pênalti: a faixa PÊNALTI entra no meio da tela com um apito que treme e solta ondas; some sozinha (tempo de tela)
     // Texto em ola (GOOOL! e PÊNALTI!, Silvio 11/11): cada letra entra na sua vez e sobe e desce como a ola da torcida;
@@ -2190,8 +2224,19 @@
       }
       // Luz de estádio: o meio do gramado mais claro e os cantos mais escuros (o gramado listrado vem do CSS)
       if (!vig || vig.w !== W || vig.h !== H) { vig = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.hypot(W, H) * 0.56); vig.addColorStop(0, 'rgba(255,255,240,.05)'); vig.addColorStop(1, 'rgba(0,0,0,.26)'); vig.w = W; vig.h = H; }
-      if (cam.z > 1.003) { g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = vig; g.fillRect(0, 0, W, H); g.restore(); } else { g.fillStyle = vig; g.fillRect(0, 0, W, H); }
-      lines();
+      if (cam.z > 1.003) { g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = vig; g.fillRect(0, 0, W, H); g.restore(); lines(); }
+      else { // Celular fraco (19/11): a luz e as linhas não mudam de um quadro para o outro, e o degradê do campo inteiro a cada quadro
+        // era o que mais pesava (26 quadros/s com a CPU 6× mais lenta). Pinta uma vez numa tela guardada (`bgC`, refeita quando o tamanho
+        // muda) e cola a cada quadro. Com zoom (câmera do lance) tudo como antes
+        // duas versões: com os gols parados (o normal) e sem eles, para quando a rede está balançando depois de um gol
+        const ng = !!net, c0 = bgC && bgC[+ng];
+        if (!c0 || c0.w !== W || c0.h !== H || c0.d !== dpr || c0.width !== cv.width || c0.height !== cv.height) {
+          bgC = bgC || []; const c = bgC[+ng] = c0 || document.createElement('canvas'); c.width = cv.width; c.height = cv.height; c.w = W; c.h = H; c.d = dpr;
+          const g0 = g; g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); g.fillStyle = vig; g.fillRect(0, 0, W, H); lines(ng); g = g0;
+        }
+        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(bgC[+ng], 0, 0); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (ng) { goalDraw(0, false); goalDraw(1, false); } g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2;
+      }
       { const k1 = Math.max(cl(W / SK / 380, 0.85, 1.45) * SK * DOTK, 0.75), rr = 3.6 * k1; // bolas reservas em volta do campo (e a que saiu, indo embora)
         g.fillStyle = 'rgba(255,255,255,.75)'; g.strokeStyle = 'rgba(19,32,26,.8)'; g.lineWidth = 1.1 * k1;
         RACK.forEach(q => { if (q.h > clk) return; g.beginPath(); g.arc(X(q.x), Y(q.y), rr, 0, Math.PI * 2); g.fill(); g.stroke(); });
