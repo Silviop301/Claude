@@ -588,7 +588,9 @@
     const p0 = Math.max(0, Math.min(t.length - 5, pos - 3)), near = t.slice(p0, p0 + 5).map((x, k) => '<span class="sm-xr' + (x.me ? ' me' : Math.abs(p0 + k + 1 - Math.max(2, Math.min(t.length - 1, pos))) > 1 ? ' far' : '') + '"><i>' + (p0 + k + 1) + 'º</i>' + crest(x.id, 'sm-xc') + '<b>' + esc(club(x.id).short || club(x.id).name) + '</b><small>' + x.p + '</small></span>').join('');
     const ex = '<div class="sm-ex"><div class="sm-xb"><small class="sm-xt">PRÓXIMOS JOGOS</small>' + (nxL.join('') || '<span class="sm-xr"><b>Última rodada</b></span>') + '</div><div class="sm-xb"><small class="sm-xt">TABELA · PERTO DE VOCÊ</small>' + near + '</div></div>';
     const tip0 = null, tipNew = tip0 && !tip0.seen && !S.coTipUsed(co, tip0);
-    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : k === 'time' && tipNew ? '<i class="tm-dot">1</i>' : '') + '</button>').join('');
+    // Dep. médico com tratamento livre nesta rodada: o número fica no Clube (auditoria de navegação 19/11: só aparecia lá dentro)
+    const dmN = tut || !S.coDmLeft || !S.coDmLeft(co) ? 0 : Math.min(S.coDmLeft(co), S.coDmWho(co).length);
+    const nav = [['time', 'Time'], ['tabela', 'Tabela']].concat(CAD ? [['caderno', 'Caderno']] : []).concat([['mercado', 'Mercado'], ['clube', 'Clube']]).map(([k, n]) => '<button class="sm-nv" data-rail="' + k + '">' + n + (k === 'mercado' && inN + nwN ? '<i class="tm-dot">' + (inN + nwN) + '</i>' : k === 'time' && tipNew ? '<i class="tm-dot">1</i>' : k === 'clube' && dmN ? '<i class="tm-dot">' + dmN + '</i>' : '') + '</button>').join('');
     show('<div class="sm' + (nx.bye ? ' bye' : '') + '">' + top + '<div class="sm-card">' + card + '</div>' + ex + wk +
       '<nav class="sm-side" aria-label="Menu do técnico">' + nav + '<button class="tm-go" id="ld-play">' + (nx.bye ? 'Ver a rodada' : 'Jogar') + '</button></nav></div>', st => {
       if (U.discBind) U.discBind(st);
@@ -600,9 +602,8 @@
       if (st.querySelector('[data-cpgo]')) st.querySelector('[data-cpgo]').onclick = e => { sfx('tap'); CUP_V = e.currentTarget.dataset.cpgo; CG = null; tabela('copa'); };
       if (st.querySelector('#ld-tr')) st.querySelector('#ld-tr').onclick = () => { sfx('tap'); treino(); };
       if (st.querySelector('#ld-ol')) st.querySelector('#ld-ol').onclick = () => { sfx('tap'); olheiro(); };
-      // Silvio 11/11: "não tá legal tentar abrir o mercado e ter que ver todas as propostas antes": o Mercado abre direto e as
-      // propostas esperam na aba Propostas (o número fica na aba); só com notícia nova segue abrindo nelas
-      if (!inN && nwN) st.querySelector('[data-rail="mercado"]').onclick = () => { sfx('tap'); noticias(); };
+      // Silvio 11/11: o Mercado abre direto e as propostas esperam na aba Propostas. Desde 19/11 abre sempre em Procurar, também
+      // com notícia nova (o número fica na aba Notícias): o mesmo botão não leva mais a lugares diferentes
       if (tut) tutShow(co, st);
     });
   }
@@ -1594,7 +1595,8 @@
     // x: um detalhe a mais que só aparece no computador (#ld.wide, desenho aprovado 2026-11-11)
     const tile = (id, k, t, v, sub, cc, x) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small>' + (x ? '<i class="kb2-x">' + x + '</i>' : '') + '</span></button>';
     const expN = co.squad.filter(p => p.ct <= 1).map(p => esc(String(p.n || '').split(' ').slice(-1)[0])), expX = expN.length ? expN.slice(0, 3).join(', ') + (expN.length > 3 ? ' e mais ' + (expN.length - 3) : '') : '';
-    const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + ' · hoje ' + pos + 'º';
+    const z0 = !S.coTable(co).some(x => x.j); // antes da 1ª rodada ninguém tem posição (como na Semana)
+    const meta = (B.goal.k === 'titulo' ? 'META · título' : 'META · até o ' + B.goal.pos + 'º') + (z0 ? '' : ' · hoje ' + pos + 'º');
     show('<div class="kb2"><div class="tm-h"><button class="tcr-back" id="kb2-back" aria-label="Voltar">' + BK + '</button>' + crest(cl.id, 'kb2-cr') + '<b>' + esc(cl.name) + '</b><small>' + esc(co.ss ? co.ss.name : '') + ' · fama ' + co.fame + '</small></div>' +
       '<div class="kb2-g' + (est ? ' g3' : '') + '">' + tile('ldk-go', 'fin', 'Finanças', c.brl(f.caixa), 'no caixa', f.caixa < 0 ? 'dn' : '', 'folha por rodada <b>' + c.brl(S.coFolha(co)) + '</b>') +
         tile('', 'ele', 'Elenco', exp ? exp : co.squad.length, exp ? (exp > 1 ? 'contratos acabam' : 'contrato acaba') + ' no fim do ano' : 'jogadores', exp ? 'dn' : '', expX) +
