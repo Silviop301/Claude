@@ -110,7 +110,7 @@
   // iPhone), some no jogo ao vivo (`.lv` na tela) e com o app fora da frente, e volta de onde parou. Chave própria
   // (climbix-musica), separada do Som. Faixa nova: põe o .mp3 em assets/musica/, o nome em M_LIST e roda craque_sw.py
   const M_LIST = ['uk-garage.mp3', 'lounge.mp3', 'sports-rocker.mp3', 'shut-the-funk-up.mp3', 'cheetah-print.mp3', 'atomic-bass.mp3', 'electric-desire.mp3', 'liberty-city.mp3', 'mood-swings.mp3', 'idiot-vocal.mp3', 'unite.mp3', 'drive.mp3', 'legends.mp3', 'dobronx.mp3', 'vultures.mp3', 'space-worm.mp3', 'whiskey-gasoline.mp3', 'underwxrld.mp3', 'wabi-sabi.mp3', 'winds-of-change.mp3', 'to-that-beat.mp3', 'gold-teeth-gasoline.mp3', 'showdown.mp3', 'funky-brew.mp3',
-    'kicking-it.mp3', 'some-kinda-stranger.mp3', 'what-i-want.mp3', 'o-cold.mp3', 'koi-na-parda.mp3', 'pressure.mp3', 'freaky-love.mp3', 'go-up.mp3', 'dance-dont-walk.mp3', 'se-nos-dio.mp3', 'mojo.mp3', 'make-up-your-mind.mp3', 'fracture.mp3', 'redemption.mp3', 'i-got-it.mp3', 'i-still-break.mp3', 'wildcard.mp3', 'cant-stop-wont-stop.mp3', 'keep-your-focus-on-me.mp3', 'it-blooms.mp3', 'para-amar.mp3', 'magic.mp3', 'outside.mp3', 'moon-stars.mp3']; // 2 da Pixabay (monume) + 22 da Epidemic Sound que o Silvio mandou em 11/11 + 24 em 12/11 (licença da conta dele)
+    'kicking-it.mp3', 'some-kinda-stranger.mp3', 'what-i-want.mp3', 'o-cold.mp3', 'koi-na-parda.mp3', 'pressure.mp3', 'freaky-love.mp3', 'go-up.mp3', 'se-nos-dio.mp3', 'mojo.mp3', 'make-up-your-mind.mp3', 'fracture.mp3', 'redemption.mp3', 'i-got-it.mp3', 'i-still-break.mp3', 'wildcard.mp3', 'cant-stop-wont-stop.mp3', 'keep-your-focus-on-me.mp3', 'it-blooms.mp3', 'para-amar.mp3', 'magic.mp3', 'outside.mp3', 'moon-stars.mp3']; // 2 da Pixabay (monume) + 22 da Epidemic Sound que o Silvio mandou em 11/11 + 24 em 12/11 (licença da conta dele)
   // Nome que o disco da home mostra (faixa · artista); faixa nova sem nome aqui mostra o nome do arquivo
   const M_NAMES = { 'uk-garage.mp3': ['UK Garage', 'monume'], 'lounge.mp3': ['Lounge', 'monume'], 'sports-rocker.mp3': ['Sports Rocker', 'Taelimb'],
     'shut-the-funk-up.mp3': ['Shut the Funk Up!', 'Daniel Fridell'], 'cheetah-print.mp3': ['Cheetah Print', 'Cushy'], 'atomic-bass.mp3': ['Atomic Bass', 'Daniel Fridell'],
@@ -127,7 +127,6 @@
     'pressure.mp3': ['PRESSURE!', 'Nyck Caution'],
     'freaky-love.mp3': ['Freaky Love', "I'MIN"],
     'go-up.mp3': ['Go Up', 'Demon Baby'],
-    'dance-dont-walk.mp3': ["Dance Don't Walk", 'The Big Let Down'],
     'se-nos-dio.mp3': ['Se Nos Dio', 'Manuelo Jersey'],
     'mojo.mp3': ['MOJO', 'Nic Hanson'],
     'make-up-your-mind.mp3': ['Make up Your Mind', 'Relyae'],
