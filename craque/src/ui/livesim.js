@@ -113,7 +113,7 @@
     const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), MIDMK = _e.MIDMK !== '0', PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 1.8), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.18), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3), CELEB = +(_e.CELEB || 9), CELEB_J = 2.2, BU_CLR = +(_e.BU_CLR === undefined ? 0.22 : _e.BU_CLR), BU_LONG = +(_e.BU_LONG === undefined ? 0.3 : _e.BU_LONG), BU_GK = +(_e.BU_GK === undefined ? 0.3 : _e.BU_GK), BU_SAFE = +(_e.BU_SAFE === undefined ? 0.12 : _e.BU_SAFE), BU_OUT = +(_e.BU_OUT === undefined ? 0.3 : _e.BU_OUT), BU_ROLL = +(_e.BU_ROLL === undefined ? 0.7 : _e.BU_ROLL), BU_RCV = +(_e.BU_RCV === undefined ? 2.4 : _e.BU_RCV), SLOW_T = 0.9, SLOW_K = 0.3, CATCH_MAX = 1.2, BALL_OFF = 12.5; // CELEB: segundos da comemoração do gol (era 2: ninguém chegava ao canto)
     let DISPN = 0; // bolas que ficaram com o adversário mais perto de onde ela caiu (disputa)
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
-    let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, SK = 1, dpr = 1, raf = 0, last = 0, alive = true;
+    let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, FH = 0, OY = 0, SK = 1, dpr = 1, raf = 0, last = 0, alive = true;
     stRefresh();
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
     const reform = (p, [r, d, w, ov, inf]) => { p.r = r; p.d = d; p.w = w * 0.68; if (ov !== undefined) { p.spd += (qOf(ov) - p.q) * 0.5; p.q = qOf(ov); }
@@ -1814,17 +1814,20 @@
     }
 
     // ---------- desenho (o gramado listrado vem do CSS) ----------
-    const PAD = 14; // folga fora das linhas: os bandeirinhas correm ali
+    const PAD = 14, PITCH_A = 622 / 366; // folga fora das linhas: os bandeirinhas correm ali
     // Fora de casa o seu time fica à direita (como no placar) e ataca para a esquerda: só o desenho espelha
     // No 2º tempo os times trocam de lado: o desenho espelha de novo
     let half2 = o.half2 !== undefined ? !!o.half2 : (o.t0 || 0) >= 45; // o Treinador diz (o t0 dele conta os acréscimos)
     const mir = () => !!o.flip !== half2;
-    const X = x => PAD + (mir() ? L - x : x) / L * (W - 2 * PAD), Y = y => PAD + y / WD * (H - 2 * PAD);
+    const X = x => PAD + (mir() ? L - x : x) / L * (W - 2 * PAD), Y = y => OY + PAD + y / WD * (FH - 2 * PAD);
     function size() {
       if (!cv) return;
       const r = U.box ? U.box(cv) : cv.getBoundingClientRect(), z = U.zk ? U.zk() : 1;
       dpr = Math.min(2, window.devicePixelRatio || 1);
       W = Math.max(1, r.width / z); H = Math.max(1, r.height / z);
+      // Campo sempre na proporção do iPhone 14 deitado (19/11, Silvio: "o campo não está na mesma proporção que eu havia pedido"): em tela alta
+      // (computador largo, tablet) sobra gramado em cima e embaixo em vez de o campo esticar para 1,2. Mais largo que isso fica como era
+      FH = Math.min(H, W / PITCH_A); OY = (H - FH) / 2;
       // SK: escala do palco deitado (--ldk do #ld). O tamanho dos bonecos vem do campo em px do palco e cresce com o palco: no iPad
       // (palco 1,4 a 1,6×) o teto de 1,45 valia em px da tela e os bonecos ficavam miúdos (2026-11-13)
       { const ld = cv.closest && cv.closest('#ld'); SK = Math.max(1, (ld && parseFloat(getComputedStyle(ld).getPropertyValue('--ldk'))) || 1); } // só cresce: no celular (palco ≤ 1) fica como era
@@ -2059,7 +2062,7 @@
     }
     // Etiqueta do replay: pílula escura no canto de cima à direita, ponto vermelho piscando e a palavra; o campo escurece nas bordas
     function rpTag() {
-      const k0 = Math.max(0.75, K0_REF * Math.sqrt((W / 600) * (H / 366))), age = rp.t - rp.buf[0].c, al = Math.min(1, age / rp.rate * 4, Math.max(0, rp.end + RP_HOLD - rp.t) / rp.rate * 3);
+      const k0 = Math.max(0.75, K0_REF * Math.sqrt((W / 600) * (FH / 366))), age = rp.t - rp.buf[0].c, al = Math.min(1, age / rp.rate * 4, Math.max(0, rp.end + RP_HOLD - rp.t) / rp.rate * 3);
       g.save(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = al;
       const vg = g.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.38)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
       g.font = '800 ' + Math.round(13 * k0) + 'px "Barlow Condensed", sans-serif'; g.textBaseline = 'middle'; g.textAlign = 'left';
@@ -2246,7 +2249,7 @@
         g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 2; g.setLineDash([2.5, 2.5]); g.beginPath(); g.moveTo(X(a[0] - kx), Y(a[1] - ky)); g.lineTo(X(a[0] - kx + (ex - a[0] + 2 * kx) * u), Y(a[1] - ky + (ey - a[1] + 2 * ky) * u)); g.stroke(); g.setLineDash([]); } }
       // Bonecos, bola e árbitros em 65% (Silvio, 2026-11-06: o campo respirando vale mais que o número grande); placa, etiqueta,
       // o VOCÊ e o cartão do toque ficam no tamanho cheio (k0)
-      const k0 = Math.max(0.75, K0_REF * Math.sqrt((W / 600) * (H / 366))), k = Math.max(k0 * DOTK, 0.75); // bonecos na proporção do campo do iPhone 14 deitado (16/11, Silvio: "deixar sempre no mesmo tamanho que eu vejo no iPhone 14"): o tamanho cresce junto com o campo em qualquer tela, sem o teto de antes (no computador os bonecos ficavam pequenos e o gol parecia enorme)
+      const k0 = Math.max(0.75, K0_REF * Math.sqrt((W / 600) * (FH / 366))), k = Math.max(k0 * DOTK, 0.75); // bonecos na proporção do campo do iPhone 14 deitado (16/11, Silvio: "deixar sempre no mesmo tamanho que eu vejo no iPhone 14"): o tamanho cresce junto com o campo em qualquer tela, sem o teto de antes (no computador os bonecos ficavam pequenos e o gol parecia enorme)
       if (ball.fly && !ball.fly.shot) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.5 * k; g.setLineDash([4 * k, 4 * k]); g.beginPath(); g.moveTo(X(ball.fly.x0), Y(ball.fly.y0)); g.lineTo(X(ball.x), Y(ball.y)); g.stroke(); g.setLineDash([]); }
       // Duelo: quem tem a bola e quem vem no bote ganham um anel pontilhado em volta dos dois (um duelo por vez)
       // o.clean (Treinador deitado, Silvio 2026-11-07): campo limpo, sem anel do duelo nem nome da jogada; fica o rastro do passe
