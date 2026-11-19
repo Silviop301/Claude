@@ -10711,10 +10711,6 @@ html.desk .fdt-ch small,
 .ch-card .ch-n span { font: 600 14px/1.2 var(--body); color: #B9CDBF; }
 .ch-card.lit .ch-n span { color: #7BE3A0; }
 .ch-card.risk .ch-n span { color: #FFB547; }
-.ch-fl .o { fill: #6F7E76; } .ch-fl .i { fill: #A9B6AF; }
-.ch-fl.on .o { fill: #FF9A1F; } .ch-fl.on .i { fill: #FFD24A; }
-.ch-card.risk .ch-fl { animation: chRisk 1.6s ease-in-out infinite; }
-@keyframes chRisk { 50% { transform: scale(1.08); } }
 .ld-st button.ch-shs { flex: none; display: flex; gap: 3px; align-items: center; min-height: 44px; min-width: 60px; justify-content: center; padding: 0 4px; border: 0; background: none; cursor: pointer; }
 .ch-sh path { fill: none; stroke: #5E7A6C; stroke-width: 1.6; stroke-dasharray: 3 2; }
 .ch-sh.on path { fill: #5FB7FF; stroke: #2F6FD6; stroke-dasharray: none; }
@@ -10744,7 +10740,7 @@ html.desk .fdt-ch small,
 .ch-big .ch-amt { font-size: 30px; } .ch-big .ch-amt svg { width: 34px; height: 34px; }
 .ch-big .ch-ins { color: #C9A98A; }
 .ch-big .ch-nx { font: 600 14px var(--body); color: #C9A98A; }
-@media (prefers-reduced-motion: reduce) { .ch-card.risk .ch-fl, .ch-big .ch-in > .ch-fl { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ch-big .ch-in > .ch-fl { animation: none; } }
 
 /* Mercado largo no notebook: o título "Mercado" virava "Me..."; ele não encolhe, as abas encolhem (2026-11-15) */
 #ld.wide .mkw .mk-tt { flex: none; }
@@ -11020,3 +11016,30 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .tr3-di > small.tr3-lb { font: 700 11px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; margin-bottom: -3px; }
 .tr3-dv span { font-size: 15px; }
 .fn2-tr > small.fn2-tn { display: block; font: 600 11px/1.2 var(--body); letter-spacing: 0; text-transform: none; color: #9fb0a6; white-space: normal; }
+
+/* ===== Vida na home (2026-11-19): bola da sequência no lugar do fogo (canvas em ui/chama.js) e movimentos pequenos ===== */
+.ch-bl { position: relative; display: inline-block; flex: none; width: var(--s, 40px); height: var(--s, 40px); vertical-align: middle; }
+.ch-bl canvas { position: absolute; left: -14.5%; top: -13%; width: 129%; height: 129%; pointer-events: none; }
+.ch-bl::before { content: ''; position: absolute; left: 50%; top: 50%; width: 210%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,194,48,.34), rgba(242,194,48,0)); opacity: 0; transition: opacity .4s; pointer-events: none; }
+.ch-card .ch-bl[data-st="lit"]::before, .ch-big .ch-bl::before { opacity: 1; animation: chGlow 1.2s ease-in-out infinite alternate; }
+@keyframes chGlow { from { scale: .92; } to { scale: 1.06; } }
+.ch-bl.ign canvas { transform-origin: 50% 85%; animation: chInf .6s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes chInf { 0% { transform: scale(1.2, .55); } 55% { transform: scale(.94, 1.1); } 100% { transform: scale(1, 1); } }
+.ch-bl.ign::after { content: ''; position: absolute; left: 50%; top: 50%; width: 100%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 2px solid var(--gold); opacity: 0; animation: chRing .7s ease-out both; pointer-events: none; }
+@keyframes chRing { 0% { opacity: .9; scale: .5; } 100% { opacity: 0; scale: 2.3; } }
+.pay-ty .ch-bl, .ch-fr .ch-bl { margin-right: 2px; }
+/* Continuar: um brilho atravessa o dourado e a seta dá um toque para a frente, a cada 5,5 s */
+.ld-st button.hl-go { position: relative; overflow: hidden; }
+.hl-go::after { content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: skewX(-18deg); animation: hlSheen 5.5s ease-in-out infinite; pointer-events: none; }
+@keyframes hlSheen { 0%, 78% { translate: 0 0; } 100% { translate: 760px 0; } }
+.hl-go > svg { animation: hlNudge 5.5s ease-in-out infinite; }
+@keyframes hlNudge { 0%, 80%, 100% { translate: 0 0; } 88% { translate: 5px 0; } 94% { translate: 0 0; } }
+/* Novidades não lidas: o megafone balança e o ponto dourado pulsa */
+.hl-nv:has(> i) img.tw { transform-origin: 20% 60%; animation: hlHorn 6.5s ease-in-out infinite; }
+@keyframes hlHorn { 0%, 84%, 100% { rotate: 0deg; } 88% { rotate: -14deg; } 92% { rotate: 8deg; } 96% { rotate: -6deg; } }
+.hl-nv > i::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--gold); animation: hlPing 2.6s ease-out infinite; }
+@keyframes hlPing { 0% { scale: 1; opacity: .9; } 70%, 100% { scale: 2.4; opacity: 0; } }
+/* Protetores: um reflexo passa de vez em quando */
+.ch-sh.on path { animation: chGlint 7s ease-in-out infinite; }
+.ch-sh.on + .ch-sh.on path { animation-delay: .25s; }
+@keyframes chGlint { 0%, 88%, 100% { fill: #5FB7FF; } 94% { fill: #C4E6FF; } }
