@@ -30,7 +30,7 @@
   const verTxt = () => (isBeta() ? 'Beta 0.9' : '1.0');
   const NEWS_KEY = 'climbix-novidades';
   // NEWS_ID = a última atualização (NEWS_LAND[0].id): quem não viu esta ganha o pontinho e, se já tinha carreira, o aviso uma vez (newsPop)
-  const NEWS_ID = '1.0-1611';
+  const NEWS_ID = '0.9-1911';
   const NEWS = [
     ['🎲', 'Decisões que mudam a carreira', 'Todo evento mostra a chance de dar certo e o que se ganha ou perde. Atributos ganhos ou perdidos ficam para sempre.'],
     ['🧭', 'Escolhas de fim de carreira', 'Depois dos 30: liderança, herdeiro, ambição, cuidar do corpo. Valem legado na nota final.'],
@@ -145,14 +145,36 @@
   // rolar; a mais nova primeiro, e com mais de uma as setas do topo trocam. `dt` = data por extenso (vazio não mostra)
   // 2026-11-16 (Silvio: "mensagem na tela de quem ta jogando o beta sobre o que mudou" + "a opção de mandar sugestão"):
   // cada atualização do beta = uma entrada com `id` (NEWS_ID), `pop` (6 destaques do aviso da home) e `fb` (link Mandar sugestão)
-  const NEWS_LAND = [{ v: '0.9', id: '1.0-1611', dt: '16 de novembro', tag: 'ATUALIZAÇÃO · 16 DE NOVEMBRO', h: 'O que mudou', art: '📣',
+  // 2026-11-19 (Silvio: "Ajuste o que tem em novidades"): entrada do dia, a de 16/11 vira histórico e a lista base deixa de falar em 1.0
+  const NEWS_LAND = [{ v: '0.9', id: '0.9-1911', dt: '19 de novembro', tag: 'ATUALIZAÇÃO · 19 DE NOVEMBRO', h: 'O que mudou', art: '📣',
+    p: 'Mais uma rodada de melhorias, várias pedidas por vocês.', s: 'Bom jogo, professor!', fb: 1,
+    pop: [['⚽', 'Bola da sequência', 'Jogue todo dia e a bola gira. Parou, ela murcha.'], ['🎞️', 'Replay do gol', 'O gol passa de novo logo depois.'],
+      ['📈', 'Setas na tabela', 'Veja quem subiu ou caiu na rodada.'], ['🩹', 'Lesão à vista', 'Cruz no machucado e tratamento num toque.'],
+      ['↔️', 'LE, LD, PE e PD', 'Laterais e pontas com o lado certo.'], ['💨', 'Campo mais leve', 'Ao vivo liso até em celular simples.']],
+    sec: [['NOVO', [
+      ['⚽', 'Bola da sequência', 'Jogue um jogo por dia e a bola gira. Se ficar sem jogar, ela murcha.'],
+      ['↔️', 'Lado de cada jogador', 'LE, LD, PE, PD, VOL e MEI em todo o jogo, com o lado das escalações reais.'],
+      ['🎙️', 'Vestiário novo', 'A preleção ganhou tela nova: escolha o tom e veja o clima do grupo.'],
+      ['📝', 'Escolhas com valor', 'Cada acontecimento mostra o que custou: multa, caixa, moral e o geral no próximo jogo.']]],
+    ['JOGO AO VIVO', [
+      ['🎞️', 'Replay do gol', 'O gol passa de novo logo depois. Dá para desligar nos Ajustes.'],
+      ['🟥', 'Placar completo', 'Cartão vermelho e acréscimos aparecem no placar.'],
+      ['💨', 'Campo mais leve', 'O ao vivo roda liso até em celular mais simples.'],
+      ['👆', 'Botões maiores', 'Controles do ao vivo mais fáceis de tocar.']]],
+    ['CLUBE E TABELA', [
+      ['📈', 'Setas na tabela', 'Subiu, caiu ou ficou desde a rodada anterior, ao lado do escudo.'],
+      ['🩹', 'Machucado à vista', 'Cruz no banco e tratamento do Dep. médico num toque.'],
+      ['🏥', 'Avisos no Clube', 'Bolinha quando há tratamento livre ou contrato de titular acabando.'],
+      ['✍️', 'Contratação com festa', 'Camisa com nome e número e o carimbo de FECHADO.'],
+      ['🪙', 'Loja num toque', 'Toque no + da moedinha para abrir a Loja.']]]] },
+  { v: '0.9', id: '1.0-1611', dt: '16 de novembro', tag: 'ATUALIZAÇÃO · 16 DE NOVEMBRO', h: 'O que mudou', art: '📣',
     p: 'Valeu por jogar o beta! Cada ideia de vocês vira melhoria aqui.', s: 'Bom jogo, professor!', fb: 1,
     pop: [['⭐', 'Notas do EA FC', 'Jogadores reais com a nota do EA FC 26.'], ['🎯', 'Chute com curva', 'Golaços de fora da área e de falta.'],
-      ['🔥', 'Chama do técnico', 'Jogue todo dia e ganhe moedas.'], ['⏩', 'Só resultado', 'O placar corre em 5 segundos.'],
+      ['⚽', 'Sequência diária', 'Jogue todo dia e ganhe moedas.'], ['⏩', 'Só resultado', 'O placar corre em 5 segundos.'],
       ['📈', 'Propostas melhores', 'Subiu ou ganhou? Clube maior chama.'], ['🤝', 'Negociação nova', 'Régua de valor e humor do presidente.']],
     sec: [['NOVO', [
       ['⭐', 'Notas do EA FC', 'Os jogadores reais têm o geral do EA FC 26, e cada clube segue com a força de antes.'],
-      ['🔥', 'Chama do técnico', 'Jogue um jogo por dia, cumpra o desafio do dia e ganhe moedas nos marcos.'],
+      ['⚽', 'Sequência diária', 'Jogue um jogo por dia, cumpra o desafio do dia e ganhe moedas nos marcos.'],
       ['⏩', 'Só resultado', 'Uma tela de 5 segundos com o relógio correndo e os gols aparecendo.'],
       ['📋', 'Estilos por posição', 'Cada vaga tem o seu estilo, e jogador fora de posição rende menos.'],
       ['📊', 'Força por setor', 'Ataque, meio e defesa seus e do rival no cartão da semana.']]],
@@ -167,9 +189,9 @@
       ['💼', 'Aporte sem limite', 'Invista moedas no clube quantas vezes quiser.'],
       ['🔍', 'Falas novas', 'Mais variação no olheiro, na coletiva e nos acontecimentos.'],
       ['✅', 'Botão Melhores', 'Não embaralha mais quem já está na posição certa.']]]] },
-    { v: '1.0', dt: '', tag: 'LANÇAMENTO · VERSÃO 1.0', h: 'O Climbix chegou!', art: '🎉',
+    { v: '0.9', dt: '', tag: 'BETA · TUDO NO JOGO', h: 'O Climbix chegou!', art: '🎉',
     p: 'Você é o técnico. Escale o time, mexa com a bola rolando e leve o seu clube da última divisão ao topo.', s: 'Bom jogo, professor!', foot: 'Modo Jogador chega em breve.',
-    lt: 'O QUE TEM NA 1.0', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['📣', 'Momentos da auxiliar', 'Ela sugere, você decide.'], ['🤝', 'Mercado e treino', 'Compre, venda e evolua o elenco.'], ['🏟️', 'O seu clube', 'Estádio, médico e finanças.']],
+    lt: 'O QUE TEM NO JOGO', li: [['⚽', 'Jogo ao vivo de verdade', 'Cada lance é decidido na hora.'], ['📣', 'Momentos da auxiliar', 'Ela sugere, você decide.'], ['🤝', 'Mercado e treino', 'Compre, venda e evolua o elenco.'], ['🏟️', 'O seu clube', 'Estádio, médico e finanças.']],
     // 2026-11-12 (Silvio: "coloque mais informações... pode ser rolável"): a lista completa por grupos, no painel que rola
     sec: [['JOGO AO VIVO', [
       ['⚽', 'Jogado de verdade', 'Sem roteiro: cada passe e chute sai na hora, pelos atributos de quem está em campo.'],
@@ -203,7 +225,7 @@
       ['🪙', 'Presente de boas-vindas', 'Conta nova ganha 36 moedas para começar.'],
       ['💼', 'Aporte e clube à escolha', 'Use moedas para investir no clube ou começar a carreira onde quiser.']]]],
     // 2026-11-13 (Silvio: "o que vem por aí" da 1.1): fim da lista, cartões tracejados "em breve", sem prometer data
-    prox: ['O QUE VEM NA 1.1', [
+    prox: ['O QUE VEM DEPOIS', [
       ['👆', 'Posição livre', 'Arraste o jogador para qualquer ponto do campo e monte o time do seu jeito.'],
       ['🏆', 'Estaduais e Supercopa', 'Mais taças no calendário, com clássico logo no começo do ano.'],
       ['📸', 'Compartilhe o título', 'Mostre a taça e a campanha para os amigos com um toque.'],
@@ -235,7 +257,7 @@
     newsSeen();
     U.LD.show('<div class="nvd' + (N.sec ? ' nvd-x' : '') + '"><div class="tm-h"><button class="tcr-back" id="nvd-back" aria-label="Voltar">' + BK + '</button><span class="mk-tt"><b>Novidades</b><small>Versão ' + N.v + (N.dt ? ' · ' + N.dt : '') + '</small></span>' +
         (n > 1 ? '<span class="nvd-pg"><button id="nvd-nx" aria-label="Versão mais nova"' + (i ? '' : ' disabled') + '>' + AR(-1) + '</button><button id="nvd-pv" aria-label="Versão anterior"' + (i < n - 1 ? '' : ' disabled') + '>' + AR(1) + '</button></span>' : '') + '</div>' +
-      (N.sec ? '<div class="nvd-lc">' : '') + '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.prox ? '<button class="nvd-vem" id="nvd-vem">O que vem na 1.1 ›</button>' : N.fb ? '<button class="nvd-vem" id="nvd-fb">Mandar sugestão ›</button>' : N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button></div>' : '') +
+      (N.sec ? '<div class="nvd-lc">' : '') + '<div class="nvd-c">' + U.emo(N.art, 'lg') + '<small>' + N.tag + '</small><b>' + N.h + '</b><p>' + N.p + '</p>' + (N.s ? '<strong>' + N.s + '</strong>' : '') + (N.prox ? '<button class="nvd-vem" id="nvd-vem">O que vem depois ›</button>' : N.fb ? '<button class="nvd-vem" id="nvd-fb">Mandar sugestão ›</button>' : N.foot ? '<em>' + N.foot + '</em>' : '') + '</div>' + (N.sec ? '<button class="tm-go" id="nvd-go">Bora jogar</button></div>' : '') +
       (N.sec ? '<div class="nvd-r nvd-rs"><div class="nvd-l nvd-sc">' + N.sec.map(([g, it]) => '<small>' + g + '</small><div class="nvd-g">' + it.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>').join('') + (N.prox ? '<small class="nvd-fs" id="nvd-fs">' + N.prox[0] + '<i>EM BREVE</i></small><div class="nvd-g nvd-fut">' + N.prox[1].map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' : '') + '</div><i class="nvd-mais" aria-hidden="true"></i></div>' :
       '<div class="nvd-r"><div class="nvd-l"><small>' + N.lt + '</small>' + N.li.map(([e, t, d]) => '<div>' + U.emo(e, 'md') + '<span><b>' + t + '</b><small>' + d + '</small></span></div>').join('') + '</div>' +
         '<button class="tm-go" id="nvd-go">Bora jogar</button></div>') + '</div>', st => {
