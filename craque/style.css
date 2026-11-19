@@ -11069,3 +11069,5 @@ button.coin-pill .cp-plus { display: inline-grid; place-items: center; width: 20
 .me > .tbmv.up { background: #15964A; } .me > .tbmv.dn { background: #C9303A; } .me > .tbmv.eq { background: rgba(19, 32, 26, .35); }
 /* Bolinha do tratamento livre no cartão do Dep. médico do Clube (2026-11-19) */
 .kb2-pr#kb2-dm { position: relative; } #kb2-dm > .tm-dot { right: 10px; top: 10px; text-align: center; }
+/* Bolinha no cartão Elenco do Clube: titulares com contrato acabando nas 5 últimas rodadas (2026-11-19) */
+.kb2-t { position: relative; } .kb2-t > .tm-dot { right: 12px; top: 14px; text-align: center; }
