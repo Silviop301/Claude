@@ -101,6 +101,7 @@ python3 tools/craque_numeros.py [dias]              # contagem anônima: novos, 
 NODE_PATH=$(npm root -g) node tools/craque_sons.js [pasta]   # grava cada som do jogo (sound.js) em WAV, com volume de cada um
 python3 tools/craque_portal.py [itch]               # pacote para portal (dist/climbix-itch.zip): sem api/sw/escudos, que vêm de climbix.app
 bash tools/craque_ciclo.sh /tmp/ciclo                # checagens do ciclo num resumo (RAPIDO=1 mais curto)
+NODE_PATH=$(npm root -g) node tools/craque_fluidez.js [cpu=6] [s=12]   # celular fraco: CPU estrangulada (CDP), quadros/s do ao vivo do Treinador (844x390, DSF 3); PERFIL=1 funções que mais gastam, CONTA=1 chamadas do canvas por quadro, TELAS=1 trocas de tela. 19/11: 26 -> ~51 q/s na CPU 6x com a luz, linhas e gols guardados numa tela de fundo (`bgC`) e os bonecos de pé em figurinha (`SPR`, `sprBody`) no livesim.js
 python3 tools/craque_lint_textos.py /tmp/ciclo/tr-cel   # plural, contração e placeholder errados no texto das telas
 python3 tools/craque_telas_diff.py /tmp/antes /tmp/depois   # telas que mudaram entre duas rodadas do craque_telas.js
 NODE_PATH=$(npm root -g) node tools/craque_telas_jaj.js /tmp/jaj   # fotos do Jogo a Jogo (criação, celular e apps, partida, jornal, lance, fim da temporada); DESKTOP=1 ... 1440 900
