@@ -1953,7 +1953,7 @@
           try { sprBody(p, half / dpr, half / dpr, r, k, me, kt, shirt, edge, eQ, num, dark, txt); } finally { g = g0; }
           SPR.set(key, sp);
         }
-        const a0 = g.globalAlpha; g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(sp, (x - sp.h) * dpr, (y - sp.h) * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = a0;
+        g.drawImage(sp, x - sp.h, y - sp.h, sp.h * 2, sp.h * 2); // na transformação de agora: com o zoom do lance e do replay a figurinha acompanha (19/11: zerar a transformação aqui tirava o zoom do resto do quadro e o gol saía duas vezes no replay)
         // Bico: para onde ele olha (corre ou vira para a bola), na borda do disco
         if (!p.down) { const fx = mir() ? -p.fx : p.fx, fy = p.fy, fm = Math.hypot(fx, fy) || 1, ux = fx / fm, uy = fy / fm, a = r + 3.6 * k, b = r - 0.6 * k, w = 2.6 * k;
           g.fillStyle = me ? '#F2C230' : '#FBF8EF'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 0.9 * k;
