@@ -169,11 +169,11 @@
       ['🪙', 'Loja num toque', 'Toque no + da moedinha para abrir a Loja.']]]] },
   { v: '0.9', id: '1.0-1611', dt: '16 de novembro', tag: 'ATUALIZAÇÃO · 16 DE NOVEMBRO', h: 'O que mudou', art: '📣',
     p: 'Valeu por jogar o beta! Cada ideia de vocês vira melhoria aqui.', s: 'Bom jogo, professor!', fb: 1,
-    pop: [['⭐', 'Notas do EA FC', 'Jogadores reais com a nota do EA FC 26.'], ['🎯', 'Chute com curva', 'Golaços de fora da área e de falta.'],
+    pop: [['⭐', 'Notas do EA FC', 'Jogadores reais com a nota do EA FC 27.'], ['🎯', 'Chute com curva', 'Golaços de fora da área e de falta.'],
       ['⚽', 'Sequência diária', 'Jogue todo dia e ganhe moedas.'], ['⏩', 'Só resultado', 'O placar corre em 5 segundos.'],
       ['📈', 'Propostas melhores', 'Subiu ou ganhou? Clube maior chama.'], ['🤝', 'Negociação nova', 'Régua de valor e humor do presidente.']],
     sec: [['NOVO', [
-      ['⭐', 'Notas do EA FC', 'Os jogadores reais têm o geral do EA FC 26, e cada clube segue com a força de antes.'],
+      ['⭐', 'Notas do EA FC', 'Os jogadores reais têm o geral do EA FC 27, e cada clube segue com a força de antes.'],
       ['⚽', 'Sequência diária', 'Jogue um jogo por dia, cumpra o desafio do dia e ganhe moedas nos marcos.'],
       ['⏩', 'Só resultado', 'Uma tela de 5 segundos com o relógio correndo e os gols aparecendo.'],
       ['📋', 'Estilos por posição', 'Cada vaga tem o seu estilo, e jogador fora de posição rende menos.'],
