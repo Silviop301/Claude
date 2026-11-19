@@ -76,7 +76,7 @@
       const link = (id, ic, t) => '<button class="cfg-link" id="' + id + '">' + U.emo(ic, 'sm') + '<span>' + t + '</span>' + U.ICON['chevron-right'] + '</button>';
       w.innerHTML = '<div class="cfg cfg2" role="dialog" aria-modal="true" aria-label="Configurações"><div class="cfg-head"><b>Configurações</b><button class="cfg-x" aria-label="Fechar">' + U.ICON.x + '</button></div>' +
         conta + GROUPS().map(g => '<div class="cfg-grp"><h3>' + g.t + '</h3><div class="cfg-box">' + g.rows.map(row).join('') + '</div></div>').join('') +
-        '<div class="cfg-links">' + link('cfg-train', '🥅', 'Treinar lances') + link('cfg-fb', '💬', 'Dar opinião sobre o jogo') + link('cfg-news', '📣', 'Novidades da versão ' + verTxt()) + '</div>' +
+        '<div class="cfg-links">' + link('cfg-fb', '💬', 'Dar opinião sobre o jogo') + link('cfg-news', '📣', 'Novidades da versão ' + verTxt()) + '</div>' +
         // Crédito exigido pela licença dos emojis
         '<p class="cfg-credit">Emojis: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)</p></div>';
       w.querySelector('.cfg').scrollTop = y;
@@ -91,7 +91,6 @@
       });
       const close = () => { w.remove(); if (U.G.c) U.bar(); };
       w.querySelector('.cfg-x').onclick = close;
-      w.querySelector('#cfg-train').onclick = () => { close(); U.trainMenu(); };
       w.querySelector('#cfg-fb').onclick = () => { close(); U.feedback('config'); };
       w.querySelector('#cfg-news').onclick = () => { close(); whatsNew(true); };
       // A conta é uma tela inteira: no meio da carreira pergunta antes (a carreira fica salva)

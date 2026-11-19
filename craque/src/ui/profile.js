@@ -203,7 +203,7 @@
         '<span class="pf-xp"><span class="pf-bar big"><em style="width:' + Math.round(L.cur / L.next * 100) + '%"></em></span><small><b>' + L.cur + ' de ' + L.next + ' XP</b> para o nível ' + (L.lv + 1) + '</small></span>',
         '<small>nível</small><b>' + L.lv + '</b><span class="tk-bars"></span>') +
       '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Metas da semana</h2><span>' + (left === 1 ? 'renovam amanhã' : 'renovam em ' + left + ' dias') + '</span></div><div class="hm-tks">' + wk.goals.map(goal).join('') + '</div></section>' +
-      '<section class="pf-sec tab-sec pf-sk">' + U.streakHome() + '</section>' +
+      '<section class="pf-sec tab-sec pf-sk">' + (U.streakHome ? U.streakHome() : '') + '</section>' +
       (U.COINS && U.COINS.clubs().length ? '<section class="pf-sec tab-sec"><div class="tab-sh"><h2>Seus times</h2><span>comprados com moedas</span></div><div class="pf-clubs">' +
         U.COINS.clubs().map(id => '<span>' + U.crest(id) + esc(U.club(id).short || U.club(id).name) + '</span>').join('') + '</div></section>' : '') +
       (window.CRAQUE_WORLD && U.worldTk ? '<section class="pf-sec tab-sec">' + U.worldTk() + '</section>' : '') +
@@ -214,8 +214,8 @@
     );
     U.topBarBind();
     U.backTo = open;
-    U.worldHomeBind();
-    U.streakBind(open); // pegou o prêmio do dia: redesenha (o pacotinho vai para a fila da tela inicial)
+    if (U.worldHomeBind) U.worldHomeBind();
+    if (U.streakBind) U.streakBind(open); // pegou o prêmio do dia: redesenha (o pacotinho vai para a fila da tela inicial)
   }
 
   // ---------- Treinador: números do técnico, ganchos e a tela deitada (quadro 53) ----------

@@ -242,7 +242,7 @@
     raw(KEYS.reset, Date.now());
     if (U.ITEMS) U.ITEMS.reset(); // o inventário recomeça (10 números novos) na próxima leitura
     G.c = null; G.step = null;
-    const done = () => { U.home(); if (LAND()) U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'OK', () => {}, 'Fechar'); else U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'Nova carreira', () => U.create(), 'Fechar'); };
+    const done = () => { U.home(); if (LAND()) U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'OK', () => {}, 'Fechar'); else U.ask('Progresso reiniciado', 'Tudo pronto para começar do zero.', 'Nova carreira', () => U.coCreate(0), 'Fechar'); };
     if (acc()) sync().then(done, done); else done();
   }
   const LEGAL = '<p class="muted small acc-legal"><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>';

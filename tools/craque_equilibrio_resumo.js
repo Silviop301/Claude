@@ -62,10 +62,10 @@ if (du && dg && dm) {
   linha(k, 'Fora de posição (Flamengo x Palmeiras)', `normal ${b.toFixed(2)} pts/jogo · atacante no gol −${g.toFixed(2)} · atacante no meio −${m.toFixed(2)}`);
 }
 // 6: regras
-const inv = rd('invariantes.log'), te = rd('temporadas.log');
-if (inv || te) {
-  const f = num(inv, /^(\d+) falhas/m), a = num(te, /^(\d+) alertas/m);
-  linha(f === 0 && a === 0 ? 'v' : (Number.isFinite(f) && Number.isFinite(a)) ? 'r' : 'x', 'Regras do motor e temporadas inteiras', `${Number.isFinite(f) ? f : '?'} falhas · ${Number.isFinite(a) ? a : '?'} alertas`);
+const te = rd('temporadas.log');
+if (te) {
+  const a = num(te, /^(\d+) alertas/m);
+  linha(a === 0 ? 'v' : Number.isFinite(a) ? 'r' : 'x', 'Temporadas inteiras', `${Number.isFinite(a) ? a : '?'} alertas`);
 }
 console.log(out.join('\n'));
 const n = k => out.filter(l => l.startsWith(cor[k])).length;

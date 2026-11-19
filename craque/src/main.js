@@ -1,8 +1,5 @@
 // CRAQUE: ponto de partida da interface. As telas ficam em ui/*.js (carregadas antes pelo index.html).
-// Link de carta compartilhada (?c=...) abre direto nela; senão, a tela inicial
-window.CRAQUE_UI.challengeFromLink(); // desafio (?d=...) fica guardado e aparece na tela inicial
-window.CRAQUE_UI.relampagoFromLink(); // desafio da Carreira Relâmpago (?r=...), idem
-if (!window.CRAQUE_UI.cardFromLink()) window.CRAQUE_UI.home();
+window.CRAQUE_UI.home();
 // A tela de carregar (index.html) sai quando a primeira tela abre (a home deitada fica no palco, fora do #screen)
 { const bt = document.getElementById('boot'); if (bt) bt.remove(); }
 // Com conta: traz o que mudou em outro aparelho
@@ -19,20 +16,6 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:' && !window.CLI
   });
 }
 
-// Efeitos 3D (bola, cartas, jornal): a biblioteca é grande e não é necessária para a primeira tela.
-// Carrega depois da página abrir, quando o navegador estiver livre.
-(function () {
-  const tag = document.getElementById('ball3d-src');
-  if (!tag) return;
-  const go = () => {
-    const s = document.createElement('script'); s.type = 'module'; s.src = tag.dataset.src;
-    // A biblioteca não chegou (sem internet, rede bloqueando, navegador antigo): as telas usam o desenho 2D
-    s.onerror = () => { window.CRAQUE_BALL_FAIL = true; if (window.CLIMBIX_REPORT) window.CLIMBIX_REPORT('3D: biblioteca não carregou'); window.dispatchEvent(new Event('craque-ball-fail')); };
-    document.head.appendChild(s);
-  };
-  const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(go, { timeout: 2500 }) : setTimeout(go, 800));
-  if (document.readyState === 'complete') idle(); else window.addEventListener('load', idle);
-})();
 
 
 // Versão nova no ar com a aba aberta (17/11: um jogador seguiu dois jogos na versão de antes do conserto): de 10 em 10 min e
