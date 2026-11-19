@@ -1238,8 +1238,8 @@
       if (gap > 6000 || stopW) { wdT = Date.now(); return; }
       if (m.min - snapMin >= 5) snap(); // de 5 em 5 minutos o jogo fica guardado
       if (away) { wdT = Date.now(); return; }
-      // janelinha aberta só conta com o jogo parado (`open`): com Números aberto o relógio segue, e relógio parado ali é travamento (17/11)
-      const busyUi = (document.getElementById('ld-pop') && open) || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
+      // janelinha aberta (ou a dica do 1º jogo, `ld-tu`: o vigia soltava o jogo por baixo dela, 19/11) só conta com o jogo parado (`open`): com Números aberto o relógio segue, e relógio parado ali é travamento (17/11)
+      const busyUi = ((document.getElementById('ld-pop') || document.getElementById('ld-tu')) && open) || ($('lv-sheet') && $('lv-sheet').classList.contains('on')) || document.hidden;
       const wdNow = m.tk != null ? m.tk : m.min; // nos acréscimos o minuto fica em 45 ou 90 e só os minutos jogados andam
       if (wdNow !== wdMin || busyUi) { wdMin = wdNow; wdT = Date.now(); return; }
       if (Date.now() - wdT < (wait ? 40000 : 15000)) return;

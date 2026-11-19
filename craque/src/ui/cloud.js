@@ -229,6 +229,8 @@
   const WIPE = [SAVE, SAVE_FC, 'climbix-treinador-v1', KEYS.save2, KEYS.fc2, KEYS.treinador2, KEYS.treinador3, KEYS.treinador4, KEYS.treinador5, HALL, U.HALL_JAJ, KEYS.col, KEYS.ach, KEYS.daily, KEYS.sala, KEYS.itens, 'climbix-seen-v1', 'climbix-rank-queue'];
   const RESET = '<div class="acc-reset"><b>Reiniciar progresso</b><p>Começa o jogo do zero neste aparelho' + ' e na nuvem, se você tiver conta.</p>' +
     '<button class="btn ghost acc-danger" id="b-reset">Reiniciar progresso</button></div>';
+  // Quem nunca jogou não vê "Reiniciar progresso" na tela de criar conta (primeira impressão, 19/11): só com carreira ou Hall guardados
+  const hasProg = () => [SAVE, SAVE_FC, 'climbix-treinador-v1', KEYS.save2, KEYS.fc2, KEYS.treinador2, KEYS.treinador3, KEYS.treinador4, KEYS.treinador5, HALL, U.HALL_JAJ].some(k => { try { const v = k && localStorage.getItem(k); return !!v && v !== 'null' && v !== '[]' && v !== '{}'; } catch (e) { return true; } });
   function bindReset() {
     const b = $('b-reset');
     if (!b) return;
@@ -347,7 +349,7 @@
         '<form class="ct-form" id="acc-form" autocomplete="on">' + lfield('acc-user', 'Usuário', USER) +
         lfield('acc-pass', 'Senha', 'name="password" type="password" autocomplete="' + (reg ? 'new-password' : 'current-password') + '" minlength="6"') +
         lmsg(msg) + '<i></i><button class="ct-go" id="acc-go" type="submit">' + (reg ? 'Criar conta' : 'Entrar') + '</button></form>',
-      '<div id="acc-prov"></div>' + (reg ? '<p class="ct-tx pad" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>' : '<button class="ct-gh" id="acc-forgot">Esqueci a senha</button>') + '<i></i>' + RESET_L);
+      '<div id="acc-prov"></div>' + (reg ? '<p class="ct-tx pad" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>' : '<button class="ct-gh" id="acc-forgot">Esqueci a senha</button>') + '<i></i>' + (hasProg() ? RESET_L : ''));
     else render(top('Início', 'Salvar na nuvem', reg ? 'Criar conta' : 'Entrar') +
       '<p class="lead">' + (reg ? 'Seu usuário também vira seu nome no ranking.' : 'Continue suas carreiras em qualquer aparelho.') + '</p>' +
       '<div class="acc-prov" id="acc-prov"></div>' +
@@ -357,7 +359,7 @@
       note(msg) + '<button class="btn" id="acc-go" type="submit">' + (reg ? 'Criar conta' : 'Entrar') + '</button></form>' +
       '<div class="acc-links"><button class="link-btn" id="acc-switch">' + (reg ? 'Já tenho conta: entrar' : 'Não tenho conta: criar agora') + '</button>' +
       (reg ? '<p class="muted small" id="acc-hint">Guarde bem a senha: não dá para recuperar por e-mail.</p>'
-        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + '</div>' + RESET + LEGAL);
+        : '<button class="link-btn" id="acc-forgot">Esqueci a senha</button>') + '</div>' + (hasProg() ? RESET : '') + LEGAL);
     bindReset();
     $('b-back-home').onclick = L ? goBack : U.home;
     $('acc-switch').onclick = () => screen(reg ? 'login' : 'register');
