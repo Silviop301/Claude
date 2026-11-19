@@ -8,6 +8,52 @@
   const L = 105, WD = 68, GL = 28, GR = 40; // gol de 12 m, o mesmo do cérebro 11x11 (GOL_HW, 14/11)
   const cl = (v, a, b) => Math.max(a, Math.min(b, v));
   const sig = v => 1 / (1 + Math.exp(-v));
+  // Bola com desenho por competição (19/11, Silvio: "tá parecendo bola de sinuca" e "padrões diferentes por competição"; prévia aprovada
+  // https://claude.ai/artifact/HXpyAj3yXYaTabXQwcjepS). Desenhada por código pixel a pixel numa figurinha pequena: liga = gomos pretos no
+  // creme, copa nacional = faixa dourada, continental = hélices vermelhas, segunda continental = onda laranja, final = dourada. Só desenho.
+  const BALLP = (() => {
+    const PHI = (1 + Math.sqrt(5)) / 2, VS = [];
+    [[0, 1, PHI], [1, PHI, 0], [PHI, 0, 1]].forEach(v => [1, -1].forEach(sa => [1, -1].forEach(sb => { const q = v.slice(); let n = 0; for (let i = 0; i < 3; i++) if (q[i]) q[i] *= n++ ? sb : sa; const l = Math.hypot(q[0], q[1], q[2]); VS.push(q.map(c => c / l)); })));
+    const dt3 = (p, q) => p[0] * q[0] + p[1] * q[1] + p[2] * q[2], nrm = p => { const l = Math.hypot(p[0], p[1], p[2]); return [p[0] / l, p[1] / l, p[2] / l]; };
+    const crs = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]];
+    const FR = VS.map(v => { const o = VS.find(w => w !== v && dt3(v, w) > .4), u = nrm(crs(crs(v, o), v)); return [v, u, crs(v, u)]; });
+    const K5 = 2 * Math.PI / 5;
+    const pentIn = (p, s) => { // dentro do pentágono (s = tamanho angular) do vértice mais perto? devolve a folga até a borda (negativa = fora)
+      let bi = 0, bd = -2; for (let i = 0; i < 12; i++) { const d = dt3(p, VS[i]); if (d > bd) { bd = d; bi = i; } }
+      const f = FR[bi], a = Math.atan2(dt3(p, f[2]), dt3(p, f[1])), r = Math.acos(Math.min(1, bd)), aa = ((a % K5) + K5) % K5 - K5 / 2;
+      return s * Math.cos(K5 / 2) / Math.cos(aa) - r;
+    };
+    const hx = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const C = { cre: hx('#F4F0E4'), ink: hx('#15171A'), gold: hx('#F2C230'), gold2: hx('#C8941E'), navy: hx('#13264A'), red: hx('#D03A2F'), orange: hx('#FF7A1A'), white: hx('#FBFAF5'), teal: hx('#1C8C8C') };
+    const PAT = {
+      liga: p => pentIn(p, 0.37) > 0 ? C.ink : C.cre,
+      copa: p => { const b = Math.abs(p[2]); if (b < 0.2) return b > 0.15 ? C.navy : C.gold; return Math.abs(p[0]) < 0.08 ? C.navy : C.white; },
+      cont: p => { const s = Math.sin(3 * Math.atan2(p[1], p[0]) + 3.2 * p[2]); return s > 0.45 ? (s > 0.62 ? C.red : C.navy) : C.white; },
+      cont2: p => { const ph = Math.atan2(p[1], p[0]), a = Math.abs(p[2] - 0.42 * Math.sin(3 * ph)); if (a < 0.24) return a > 0.18 ? C.navy : C.orange; return Math.abs(p[2] + 0.42 * Math.sin(3 * ph + 1)) < 0.06 ? C.teal : C.white; },
+      final: p => { const m = pentIn(p, 0.36); return m > 0 ? (m < 0.05 ? C.ink : C.gold2) : C.gold; },
+    };
+    const rot = (ax, a) => { const x = ax[0], y = ax[1], z = ax[2], c = Math.cos(a), s = Math.sin(a), t = 1 - c; return [[t * x * x + c, t * x * y - s * z, t * x * z + s * y], [t * x * y + s * z, t * y * y + c, t * y * z - s * x], [t * x * z - s * y, t * y * z + s * x, t * z * z + c]]; };
+    const mul = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
+    const SS = [[-.25, -.25], [.25, -.25], [-.25, .25], [.25, .25]];
+    // pinta a bola num canvas size x size; M leva da tela (x direita, y baixo, z para quem olha) para a bola; luz de cima à esquerda
+    function paint(cv, size, M, kind) {
+      if (cv.width !== size) { cv.width = cv.height = size; cv._ctx = null; }
+      const ctx = cv._ctx || (cv._ctx = cv.getContext('2d')), img = ctx.createImageData(size, size), D = img.data, R = size / 2 - 0.5, f = PAT[kind] || PAT.liga, h = size / 2;
+      for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
+        let r = 0, gg = 0, b = 0, a = 0;
+        for (let s = 0; s < 4; s++) {
+          const x = (i + 0.5 + SS[s][0] - h) / R, y = (j + 0.5 + SS[s][1] - h) / R, q = x * x + y * y; if (q > 1) continue;
+          const z = Math.sqrt(1 - q), p = [M[0][0] * x + M[1][0] * y + M[2][0] * z, M[0][1] * x + M[1][1] * y + M[2][1] * z, M[0][2] * x + M[1][2] * y + M[2][2] * z];
+          const c = f(p), l = 0.62 + 0.38 * Math.max(0, -0.45 * x - 0.55 * y + 0.7 * z), sp = Math.pow(Math.max(0, -0.4 * x - 0.5 * y + 0.77 * z), 24) * 70;
+          r += Math.min(255, c[0] * l + sp); gg += Math.min(255, c[1] * l + sp); b += Math.min(255, c[2] * l + sp); a++;
+        }
+        if (!a) continue; const o = (j * size + i) * 4; D[o] = r / a; D[o + 1] = gg / a; D[o + 2] = b / a; D[o + 3] = 255 * a / 4;
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+    return { paint, rot, mul, kinds: Object.keys(PAT) };
+  })();
+  LP.ballKinds = BALLP.kinds;
   const F433 = [['GK', 0, 50], ['LB', .22, 12], ['CB', .16, 37], ['CB', .16, 63], ['RB', .22, 88], ['CM', .5, 30], ['DM', .38, 50], ['CM', .5, 70], ['LW', .8, 15], ['ST', .9, 50], ['RW', .8, 85]];
   const F442 = [['GK', 0, 50], ['LB', .22, 12], ['CB', .16, 37], ['CB', .16, 63], ['RB', .22, 88], ['LM', .55, 14], ['CM', .45, 40], ['CM', .45, 60], ['RM', .55, 86], ['ST', .86, 40], ['ST', .86, 60]];
   // Quanto vale ter a bola num ponto (no referencial de quem ataca): perto do gol e pelo meio vale muito mais
@@ -113,6 +159,7 @@
     const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), MIDMK = _e.MIDMK !== '0', PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 2.2), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.18), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3), CELEB = +(_e.CELEB || 9), CELEB_J = 2.2, BU_CLR = +(_e.BU_CLR === undefined ? 0.22 : _e.BU_CLR), BU_LONG = +(_e.BU_LONG === undefined ? 0.3 : _e.BU_LONG), BU_GK = +(_e.BU_GK === undefined ? 0.3 : _e.BU_GK), BU_SAFE = +(_e.BU_SAFE === undefined ? 0.12 : _e.BU_SAFE), BU_OUT = +(_e.BU_OUT === undefined ? 0.3 : _e.BU_OUT), BU_ROLL = +(_e.BU_ROLL === undefined ? 0.7 : _e.BU_ROLL), BU_RCV = +(_e.BU_RCV === undefined ? 2.4 : _e.BU_RCV), SLOW_T = 0.9, SLOW_K = 0.3, CATCH_MAX = 1.2, BALL_OFF = 12.5; // CELEB: segundos da comemoração do gol (era 2: ninguém chegava ao canto)
     let DISPN = 0; // bolas que ficaram com o adversário mais perto de onde ela caiu (disputa)
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
+    const BK = BALLP.kinds.includes(o.ball) ? o.ball : 'liga'; let bM = BALLP.rot([1, 0, 0], 0.5), bPrev = null, bSpr = null, bSz = 0, bDirty = true; // desenho da bola (só tela)
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, FH = 0, OY = 0, SK = 1, dpr = 1, raf = 0, last = 0, alive = true;
     stRefresh();
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
@@ -2390,7 +2437,13 @@
       { const ow = mode === 'play' && !ball.fly && ball.owner;
         if (ow) { const oo = bdo ? drOff(ow.dr) : null; g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (oo ? oo[0] : 0)), Y(ow.y + (oo ? oo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); } // o anel acompanha o corpo (na meia-lua a bola vai por outro lado)
         if (!bNudge) { g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); }
-        g.fillStyle = '#fff'; g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(bx, by - air, (5.7 + air / 12) * k, 0, Math.PI * 2); g.fill(); g.stroke(); }
+        { const br = (5.7 + air / 12) * k, cx = bx, cy = by - air; // a bola gira pelo caminho que faz na tela (rola de verdade), com o desenho da competição
+          if (bPrev) { const dx = cx - bPrev[0], dy = cy - bPrev[1], d = Math.hypot(dx, dy); if (d > 0.05 && d < 60 * k) { bM = BALLP.mul(BALLP.rot([-dy / d, dx / d, 0], Math.min(0.45, d / br)), bM); bDirty = true; } }
+          bPrev = [cx, cy];
+          const sz = Math.min(44, Math.max(8, Math.ceil(2 * br * dpr) + 2)); if (!bSpr) bSpr = document.createElement('canvas');
+          if (bDirty || sz !== bSz) { BALLP.paint(bSpr, sz, bM, BK); bSz = sz; bDirty = false; }
+          const dw = sz * br / (sz / 2 - 0.5); g.drawImage(bSpr, cx - dw / 2, cy - dw / 2, dw, dw);
+          g.strokeStyle = '#13201A'; g.lineWidth = 1.7 * k; g.beginPath(); g.arc(cx, cy, br, 0, Math.PI * 2); g.stroke(); } }
       // Profundidade (16/11): bola baixa encostada no goleiro (a luva que raspa, a defesa) fica por baixo dele: redesenha o goleiro por cima
       if (!(ball.z > 1.9)) ALL.forEach(p => { if (p.r === 'GK' && ball.owner !== p && Math.hypot(p.x - ball.x, p.y - ball.y) < 1.7) dot(p, k); });
       // a bola na boca do gol ou dentro da rede passa por baixo do travessão e do teto da rede
