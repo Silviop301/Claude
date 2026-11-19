@@ -159,6 +159,17 @@
     const tb = id => hash(co.seed + '|' + co.season + '|tb|' + id);
     return rows.sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf || tb(a.id) - tb(b.id));
   };
+  // Setinhas do grupo: posição antes da última rodada jogada do grupo contra a de agora ({} antes da 2ª rodada)
+  S.coContMoves = function (co, g) {
+    const ct = ctOf(co); if (!ct || !ct.gr) return {};
+    let lk = -1; MD.forEach((md, k) => { if (ct.gr[k] && ct.gr[k][g] && ct.gr[k][g].some(Boolean)) lk = k; });
+    if (lk < 1) return {};
+    const pre = Object.assign({}, ct, { gr: ct.gr.map((x, k) => k >= lk ? (x || []).map(() => []) : x) });
+    const was = {}, out = {};
+    S.coContTable(co, g, pre).forEach((r, i) => { was[r.id] = i; });
+    S.coContTable(co, g).forEach((r, i) => { out[r.id] = was[r.id] - i; });
+    return out;
+  };
   // Os grupos fecharam: 1º de um grupo contra o 2º do vizinho
   function koBuild(co, ct) {
     const T = ct.grp.map((_, g) => S.coContTable(co, g, ct)), W = T.map(t => t[0].ix), Rn = T.map(t => t[1].ix), br = [];

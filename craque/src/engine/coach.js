@@ -834,6 +834,19 @@
   const order = tab => tab.map((t, i) => i).sort((a, b) => tab[b].p - tab[a].p || (tab[b].gp - tab[b].gc) - (tab[a].gp - tab[a].gc) || tab[b].gp - tab[a].gp);
   S.coTable = co => order(co.ss.tab).map(i => Object.assign({ id: co.ss.ids[i], me: co.ss.ids[i] === co.club }, co.ss.tab[i]));
   S.coPos = co => order(co.ss.tab).findIndex(i => co.ss.ids[i] === co.club) + 1;
+  // Setinhas da tabela (Silvio, 2026-11-19): quantas posições cada clube subiu (+) ou caiu (-) desde a rodada anterior.
+  // A tabela de antes sai dos placares guardados da última rodada (ss.res); sem eles (save antigo, 1ª rodada) volta {} e não aparece nada.
+  S.coMoves = co => {
+    const ss = co.ss, k = ss.i - 1, last = (ss.res || [])[k];
+    if (k < 1 || !last || !ss.rounds[k] || last.length < ss.rounds[k].length) return {};
+    const pre = ss.tab.map(t => ({ p: t.p, gp: t.gp, gc: t.gc }));
+    last.forEach(([h, a, gh, ga]) => { const H = pre[h], A = pre[a]; if (!H || !A) return;
+      H.gp -= gh; H.gc -= ga; A.gp -= ga; A.gc -= gh; H.p -= gh > ga ? 3 : gh < ga ? 0 : 1; A.p -= ga > gh ? 3 : ga < gh ? 0 : 1; });
+    const was = {}, now = {}, out = {};
+    order(pre).forEach((i, r) => { was[i] = r; }); order(ss.tab).forEach((i, r) => { now[i] = r; });
+    ss.ids.forEach((id, i) => { out[id] = was[i] - now[i]; });
+    return out;
+  };
   // Taça (Silvio 2026-11-10): o título já é seu? (ninguém alcança mais; ou a liga acabou com você em 1º)
   S.coTitleWon = co => {
     const ss = co.ss; if (!ss || co.sacked) return false;

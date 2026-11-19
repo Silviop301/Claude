@@ -498,8 +498,9 @@
   // Continental na Tabela (desenho h aprovado 12/11): a tabela do grupo, os seus 6 jogos e, no mata-mata, a mesma chave da copa
   let CG = null; // grupo mostrado (null = o seu)
   function contGroup(co, tg) {
-    const ct = co.ss.cont, mg = S.coContGrpOf(ct), g = CG == null ? mg : CG, T = S.coContTable(co, g), GL = 'ABCDEFGH';
-    const rows = T.map((r, i) => '<div class="cg-r' + (r.id === co.club ? ' me' : '') + (i < 2 ? ' up' : '') + '"><i>' + (i + 1) + '</i>' + crest(r.id, 'cg-cr') + '<span>' + esc(club(r.id).short || club(r.id).name) + '</span><em>' + r.j + '</em><em>' + r.v + '</em><em>' + r.e + '</em><em>' + r.d + '</em><em>' + (r.gf - r.ga > 0 ? '+' : '') + (r.gf - r.ga) + '</em><b>' + r.pts + '</b></div>').join('');
+    const ct = co.ss.cont, mg = S.coContGrpOf(ct), g = CG == null ? mg : CG, T = S.coContTable(co, g), GL = 'ABCDEFGH', MV = S.coContMoves ? S.coContMoves(co, g) : {};
+    const mvA = d => '<s class="tbmv' + (d == null ? '' : d > 0 ? ' up" aria-label="subiu ' + d : d < 0 ? ' dn" aria-label="caiu ' + -d : ' eq') + '"></s>';
+    const rows = T.map((r, i) => '<div class="cg-r' + (r.id === co.club ? ' me' : '') + (i < 2 ? ' up' : '') + '"><i>' + (i + 1) + '</i>' + mvA(MV[r.id]) + crest(r.id, 'cg-cr') + '<span>' + esc(club(r.id).short || club(r.id).name) + '</span><em>' + r.j + '</em><em>' + r.v + '</em><em>' + r.e + '</em><em>' + r.d + '</em><em>' + (r.gf - r.ga > 0 ? '+' : '') + (r.gf - r.ga) + '</em><b>' + r.pts + '</b></div>').join('');
     let chips = '';
     if (g === mg) {
       const p = ct.grp[mg].indexOf(ct.me), cn = S.coContNext(co), nxk = cn ? cn.cup.k : -1;
@@ -508,7 +509,7 @@
         return '<div class="cg-c' + (k === nxk ? ' nx' : '') + '"><small>' + (k + 1) + 'ª</small>' + crest(vs, 'cg-cc') + '<i>' + (home ? 'C' : 'F') + '</i><b class="' + cls + '">' + (sc ? sc[0] + ' x ' + sc[1] : k === nxk ? 'PRÓXIMO' : '·') + '</b></div>'; }).join('') + '</div>';
     }
     return '<div class="cg-top">' + (tg || '') + '<span class="cg-nav"><button id="cg-prev" aria-label="Grupo anterior">' + MK_L + '</button><b>Grupo ' + GL[g] + ' · passam 2</b><button id="cg-next" aria-label="Próximo grupo">' + MK_R + '</button></span></div>' +
-      '<div class="cg-h"><i></i><i></i><span>CLUBE</span><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b></div>' + rows + chips;
+      '<div class="cg-h"><i></i><i></i><i></i><span>CLUBE</span><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b></div>' + rows + chips;
   }
   function contSide(co) {
     const ct = co.ss.cont, nm = 'SUA ' + ct.name.toUpperCase(), nx = S.coContNext(co);
@@ -1528,6 +1529,8 @@
     const c = C(), co = c.co, ss = co.ss, t = S.coTable(co), n = t.length, R = ss.rounds.length, B = co.board, me = t.find(x => x.me), pos = t.indexOf(me) + 1;
     tab = tab || 'cls'; rd = rd == null ? Math.max(0, ss.i - 1) : Math.max(0, Math.min(R - 1, rd));
     const zone = p => (ss.promo && p <= ss.promo) || (!ss.promo && p === 1) ? 'up' : ss.releg && p > n - ss.releg ? 'dn' : '';
+    const MV = S.coMoves ? S.coMoves(co) : {};
+    const mvA = d => '<s class="tbmv' + (d == null ? '' : d > 0 ? ' up" aria-label="subiu ' + d : d < 0 ? ' dn" aria-label="caiu ' + -d : ' eq') + '"></s>';
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('n'); return '<span class="ld-f5">' + a.map(x => '<i class="' + x + '"></i>').join('') + '</span>'; };
     let body;
     const cupOn = !!(ss.cup || ss.cont), both = !!(ss.cup && ss.cont);
@@ -1539,9 +1542,9 @@
     if (tab === 'cal') { const cb = calBody(co, CAL_P); body = cb.html; CAL_P = cb.from; }
     else if (tab === 'copa') body = !ctV ? cupBracket(co) : ss.cont.k < 6 ? contGroup(co) : cupBracket(co, S.coContKo(co));
     else if (tab === 'cls' || tab === 'gol') {
-      body = '<div class="tb2-h' + (tab === 'cls' ? ' cls' : '') + '"><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
+      body = '<div class="tb2-h' + (tab === 'cls' ? ' cls' : '') + '"><i></i><i></i><i></i><span>CLUBE</span>' + (tab === 'cls' ? '<em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em><b>PTS</b>' : '<em>GP</em><em>GC</em><b>SG</b>') + '<span>FORMA</span></div><div class="tb2-b">' +
         t.map((x, k) => { const sg = x.gp - x.gc, cl = club(x.id), sgT = (sg > 0 ? '+' : '') + sg;
-          return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + (tab === 'cls' ? ' cls' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
+          return '<div class="tb2-r ' + zone(k + 1) + (x.me ? ' me' : '') + (tab === 'cls' ? ' cls' : '') + '"><i>' + (k + 1) + '</i>' + mvA(MV[x.id]) + crest(x.id, 'tb2-cr') + '<span>' + esc(cl.short || cl.name) + '</span>' +
             (tab === 'cls' ? '<em>' + x.j + '</em><em>' + (x.v || 0) + '</em><em>' + (x.e || 0) + '</em><em>' + (x.d || 0) + '</em><em>' + sgT + '</em><b>' + x.p + '</b>' : '<em>' + x.gp + '</em><em>' + x.gc + '</em><b>' + sgT + '</b>') + dots(x.f) + '</div>'; }).join('') + '</div>';
     } else if (tab === 'art') {
       // Artilharia do campeonato com o escudo de cada um; os seus em destaque e, se nenhum está entre os 6, o seu melhor no fim

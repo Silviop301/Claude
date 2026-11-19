@@ -190,7 +190,9 @@
     const cut = pos => (ss.promo && pos === ss.promo) || (ss.releg && pos === n - ss.releg) ? ' cut' : '';
     const sg = x => { const d = x.gp - x.gc; return '<em class="' + (d > 0 ? 'pos' : d < 0 ? 'neg' : '') + '">' + (d > 0 ? '+' : '') + d + '</em>'; };
     const dots = f => { const a = (f || '').split(''); while (a.length < 5) a.unshift('-'); return '<span class="tb-f">' + a.map(c => '<i class="' + (c === '-' ? 'n' : c) + '"></i>').join('') + '</span>'; };
-    const row = (x, k, cells) => '<div class="tb-r' + zone(k + 1) + cut(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + crest(x.id, 'xs') + '<span>' + esc(club(x.id).name) + '</span>' + cells + '</div>';
+    const MV = S.coMoves ? S.coMoves(co) : {};
+    const mvA = d => '<s class="tbmv' + (d == null ? '' : d > 0 ? ' up" aria-label="subiu ' + d : d < 0 ? ' dn" aria-label="caiu ' + -d : ' eq') + '"></s>';
+    const row = (x, k, cells) => '<div class="tb-r' + zone(k + 1) + cut(k + 1) + (x.me ? ' me' : '') + '"><i>' + (k + 1) + '</i>' + mvA(MV[x.id]) + crest(x.id, 'xs') + '<span>' + esc(club(x.id).name) + '</span>' + cells + '</div>';
     let body;
     if (tab === 'cls') body = '<div class="tbx tb-cls" style="--n:' + n + '"><div class="tb-h"><i>#</i><span>Clube</span><b>P</b><em>J</em><em>V</em><em>E</em><em>D</em><em>SG</em></div>' +
       t.map((x, k) => row(x, k, '<b>' + x.p + '</b><em>' + x.j + '</em><em>' + x.v + '</em><em>' + x.e + '</em><em>' + x.d + '</em>' + sg(x))).join('') + '</div>';
