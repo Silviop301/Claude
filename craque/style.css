@@ -7299,11 +7299,11 @@ button.cad-c { cursor: pointer; }
 .tb-box { padding: 6px 6px 8px; }
 .tbx { display: grid; gap: 1px; --rh: clamp(24px, calc((100svh - 300px) / var(--n, 20)), 32px); }
 .tb-r, .tb-h { display: grid; align-items: center; gap: 4px; padding: 0 6px 0 8px; position: relative; border-radius: 6px; }
-.tb-cls .tb-r, .tb-cls .tb-h { grid-template-columns: 20px 18px minmax(0, 1fr) 24px 22px 20px 20px 20px 28px; }
-.tb-gol .tb-r, .tb-gol .tb-h { grid-template-columns: 20px 18px minmax(0, 1fr) 24px 24px 28px 70px; }
+.tb-cls .tb-r, .tb-cls .tb-h { grid-template-columns: 20px 8px 18px minmax(0, 1fr) 24px 22px 20px 20px 20px 28px; }
+.tb-gol .tb-r, .tb-gol .tb-h { grid-template-columns: 20px 8px 18px minmax(0, 1fr) 24px 24px 28px 70px; }
 .tb-h { height: 22px; font: 700 11px var(--display); color: var(--tx-4); text-transform: uppercase; letter-spacing: .04em; }
 .tb-h b, .tb-h em, .tb-h i { font: inherit; font-style: normal; color: inherit; text-align: center; }
-.tb-h i { text-align: right; } .tb-h span { grid-column: 2 / 4; } .tb-h small { font: inherit; text-align: center; }
+.tb-h i { text-align: right; } .tb-h span { grid-column: 2 / 5; } .tb-h small { font: inherit; text-align: center; }
 .tb-r { height: var(--rh); font: 600 13px var(--body); color: var(--tx-1); }
 .tb-r:nth-child(odd) { background: rgba(255, 255, 255, .035); }
 .tb-r i { font: 700 12px var(--display); font-style: normal; color: var(--tx-3); text-align: right; font-variant-numeric: tabular-nums; }
@@ -8487,7 +8487,7 @@ html.rot #ld { padding: env(safe-area-inset-right, 0px) env(safe-area-inset-bott
 .tb2-tabs button.on { background: #F8F4EA !important; color: #13201A !important; }
 .tb2-t { grid-column: 1; grid-row: 3; min-height: 0; border-radius: 16px; background: #141517; padding: 6px 4px 6px 0; display: flex; flex-direction: column; }
 .tb2-b { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-.tb2-h, .tb2-r { display: grid; grid-template-columns: 26px 22px minmax(0, 1fr) 36px 42px 42px 72px; align-items: center; gap: 8px; padding: 0 12px; }
+.tb2-h, .tb2-r { display: grid; grid-template-columns: 26px 9px 22px minmax(0, 1fr) 36px 42px 42px 72px; align-items: center; gap: 8px; padding: 0 12px; }
 .tb2-h { height: 24px; font: 700 12px/1 var(--body); letter-spacing: .06em; color: #9fb0a6; }
 .tb2-h em, .tb2-h b { font-style: normal; text-align: center; font-weight: 700; }
 .tb2-r { height: 34px; border-radius: 10px; font: 800 18px/1 var(--display); margin: 0 6px; padding: 0 6px; }
@@ -9590,7 +9590,7 @@ button.coin-pill { cursor: pointer; border: 0; }
 /* Intervalo com as bolinhas de trocas e paradas: sem entalhe a coluna passava 12 px e cortava o "Começar o 2º tempo" (passeio, 2026-11-11) */
 .ldl-tm.ht .tm-b { height: 38px; } .ldl-tm.ht .tm-go { height: 52px; } .ldl-tm.ht .ldl-tro { padding: 5px 10px; gap: 2px; }
 /* Classificação com vitórias, empates e derrotas (Silvio, 2026-11-11): V, E e D entre os jogos e o saldo, colunas mais justas */
-.tb2-h.cls, .tb2-r.cls { grid-template-columns: 26px 22px minmax(0, 1fr) 28px 24px 24px 24px 40px 40px 72px; gap: 6px; }
+.tb2-h.cls, .tb2-r.cls { grid-template-columns: 26px 9px 22px minmax(0, 1fr) 28px 24px 24px 24px 40px 40px 72px; gap: 6px; }
 /* Mercado na 1.0: 3 abas (Procurar, Elenco, Notícias; "Indicados" saiu) e a Proposta sem a aba apagada do empréstimo (2026-11-11) */
 .mk-tabs.t3 { grid-template-columns: repeat(3, 1fr); }
 /* 4 abas de novo (11/11: Propostas pelos seus): letra um pouco menor e o número não encosta na palavra */
@@ -10298,7 +10298,7 @@ small.cx-l { display: flex; align-items: center; gap: 5px; } small.cx-l .mk-cxi 
 .cg-nav b { font: 800 14px/1 var(--display); color: var(--gold); letter-spacing: .03em; white-space: nowrap; }
 .ld-st .cg-nav button { width: 30px; height: 30px; border-radius: 8px; border: 0; background: #1f2124; color: #F3F1EA; display: grid; place-items: center; cursor: pointer; }
 .cg-nav button svg { width: 14px; height: 14px; }
-.cg-h, .cg-r { display: grid; grid-template-columns: 22px 24px minmax(0, 1fr) repeat(5, 30px) 36px; align-items: center; gap: 4px; padding: 0 14px; }
+.cg-h, .cg-r { display: grid; grid-template-columns: 22px 9px 24px minmax(0, 1fr) repeat(5, 30px) 36px; align-items: center; gap: 4px; padding: 0 14px; }
 .cg-h { height: 18px; font: 700 11px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; }
 .cg-h em, .cg-h b, .cg-r em, .cg-r b { font-style: normal; text-align: center; }
 .cg-r { height: 27px; margin: 0 6px; padding: 0 8px; border-radius: 8px; font: 700 14px/1 var(--body); color: #cfd8d2; }
@@ -11059,3 +11059,11 @@ button.coin-pill .cp-plus { display: inline-grid; place-items: center; width: 20
 @keyframes injPulse { 50% { box-shadow: 0 0 0 2px #141517, 0 0 0 6px rgba(126, 211, 154, .25); } }
 @media (prefers-reduced-motion: reduce) { .tm-bp.inj.ok .tm-inj { animation: none; } }
 .dmp-l { display: block; margin-top: 6px; font: 700 13px/1.2 var(--body); color: #2E7D4F; }
+
+/* Setinhas da tabela (2026-11-19): subiu, caiu ou ficou desde a rodada anterior, entre a posição e o escudo */
+.tbmv { display: block; justify-self: center; width: 9px; height: 7px; text-decoration: none; }
+.tbmv.up { background: #3DDC84; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.tbmv.dn { background: #FF5A5F; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.tbmv.eq { height: 2px; width: 7px; border-radius: 1px; background: rgba(185, 201, 191, .45); }
+.tb-r .tbmv { width: 8px; height: 6px; } .tb-r .tbmv.eq { width: 6px; height: 2px; }
+.me > .tbmv.up { background: #15964A; } .me > .tbmv.dn { background: #C9303A; } .me > .tbmv.eq { background: rgba(19, 32, 26, .35); }
