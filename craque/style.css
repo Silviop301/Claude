@@ -11011,3 +11011,12 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 .up-ty { overflow: hidden; }
 @keyframes vd-sheen { from { translate: -120% 0; } to { translate: 320% 0; } }
 .up-ty::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 34%; background: linear-gradient(100deg, transparent, rgba(242, 194, 48, .38), transparent); pointer-events: none; animation: vd-sheen .9s ease-out .35s both; }
+/* Clareza (19/11, análise externa): lances com menos altura e controles maiores no ao vivo; legenda do Quem manda; faixa do olheiro;
+   treino sem siglas no detalhe; o que a previsão do caixa conta */
+.ldl-side > .ldl-g4 { flex: 3 1 98px; max-height: 124px; }
+.ldl-qm small { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; white-space: nowrap; }
+.ldl-qm small em { font: 600 11px/1 var(--body); font-style: normal; letter-spacing: 0; color: var(--tx-4, #7d8a83); }
+.sm-sxl { display: block; margin-top: 1px; font: 600 11px/1.1 var(--body); letter-spacing: .02em; color: #9fb0a6; text-align: center; white-space: nowrap; }
+.tr3-di > small.tr3-lb { font: 700 11px/1 var(--body); letter-spacing: .08em; color: #9fb0a6; margin-bottom: -3px; }
+.tr3-dv span { font-size: 15px; }
+.fn2-tr > small.fn2-tn { display: block; font: 600 11px/1.2 var(--body); letter-spacing: 0; text-transform: none; color: #9fb0a6; white-space: normal; }
