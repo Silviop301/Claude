@@ -279,7 +279,7 @@
   // Quem joga bem numa vaga: da posição, ou que sabe jogar ali (goleiro só no gol)
   const fitsSlot = (p, slot) => p.pos === slot || ((p.pos === 'GOL') === (slot === 'GOL') && S.coFit(p.pos, slot) >= 0.88);
   // Reserva no banco: anel de energia com o geral, nome e a posição na cor do setor; o primeiro de cada setor abre espaço
-  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + moAr(p, 'mo-bn') + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + S.coPosAb(p) + '</small></span></button>';
+  const benchChip = (p, prev, cls, ok, num, ov) => '<button class="tm-bp' + cls + (prev && lnOf(prev.pos) !== lnOf(p.pos) ? ' g0' : '') + '" data-bp="' + p.id + '"' + (ok ? '' : ' disabled') + (p.out > 0 ? ' aria-label="' + esc(last(p.n)) + ' machucado, fora ' + p.out + '"' : '') + '><b class="tm-ring ' + enRing(p.en) + '" style="--en:' + Math.round(p.en) + '">' + (ov != null ? ov : p.ovr) + moAr(p, 'mo-bn') + (p.out > 0 ? '<em class="tm-inj" aria-hidden="true"></em>' : '') + '</b><span><i>' + (num && p.num ? p.num + ' ' : '') + esc(last(p.n)) + '</i><small data-ln="' + lnOf(p.pos) + '">' + S.coPosAb(p) + '</small></span></button>';
   // Com um titular escolhido o banco rola até o primeiro reserva que joga na vaga (o banco não cabe inteiro na tela)
   // Tocar num reserva redesenha a tela: o banco volta para onde estava (Silvio 16/11: "quero que o clique mantenha a
   // posição"); BENCH_X zera ao abrir a escalação ou a parada
@@ -695,7 +695,8 @@
       clearTimeout(anim);
       // a linha de cima desce um pouco: o anel de quem está escolhido não pode ser cortado pelo campo (Silvio 2026-11-11)
       const sl = S.coSlots(co.form), sp = spotsT(co.form).map(([px, py]) => [px, Math.round(13 + (py - 9) * 68 / 72)]);
-      const bench = co.squad.filter(p => !co.xi.includes(p.id)).sort(benchSort(c));
+      const bench = co.squad.filter(p => !co.xi.includes(p.id)).sort((a, b) => (b.out > 0) - (a.out > 0) || benchSort(c)(a, b)); // machucado no começo do banco: dá para ver de cara se tem quem tratar
+      const dmOk = S.coDmLeft && S.coDmLeft(co) > 0; // machucado com a cruz: tocar abre o tratamento do Dep. médico (Silvio 19/11)
       // O auxiliar junta todas as trocas que faria (até 3): primeiro quem está fora de posição, depois os mais cansados,
       // cada um com o melhor do banco para a vaga (ninguém entra duas vezes)
       const fixes = [], took = new Set(), probs = [];
@@ -712,7 +713,7 @@
       // Com um titular escolhido acende no banco quem joga na vaga; com um reserva escolhido, as vagas em que ele joga
       const selP = selB ? by[selB] : null;
       const dots = co.xi.map((id, i) => by[id] ? dot(by[id], sl[i], sp[i][0], sp[i][1], { own: 1, form: co.form, i, sel: swap === i, attr: ' data-xi="' + i + '" data-pid="' + id + '"' + (selP ? (fitsSlot(selP, sl[i]) ? ' data-fit="1"' : ' data-far="1"') : ''), tag: S.coSlotLbl(co.form, i) }) : '').join('');
-      const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (p.pos === sl[swap] ? ' can' : (p.pos === 'GOL') === (sl[swap] === 'GOL') ? ' lo' : ' far') : ''), c.avail(p), true, swap !== null ? ovrAt(p, sl[swap], co.form, swap) : null)).join('');
+      const bstrip = bench.map((p, k) => benchChip(p, bench[k - 1], (c.avail(p) ? '' : ' dis') + (p.out > 0 ? ' inj' + (dmOk ? ' ok' : '') : '') + (selB === p.id ? ' on' : '') + (swap !== null && c.avail(p) ? (p.pos === sl[swap] ? ' can' : (p.pos === 'GOL') === (sl[swap] === 'GOL') ? ' lo' : ' far') : ''), c.avail(p) || p.out > 0, true, swap !== null ? ovrAt(p, sl[swap], co.form, swap) : null)).join('');
       const pick = (k, l, v) => '<div class="tm-pk"><button class="tm-ar" data-tmk="' + k + '" data-d="-1" aria-label="' + l + ' anterior">' + BK + '</button><span><small>' + l + '</small><b id="tm-' + k + '">' + v + '</b></span><button class="tm-ar" data-tmk="' + k + '" data-d="1" aria-label="Próximo ' + l.toLowerCase() + '">' + FW + '</button></div>';
       const title = swap !== null ? '<span class="tm-hint">Toque ou arraste quem entra, ou toque em outro titular</span>' : selB ? '<span class="tm-hint">Toque em quem sai</span>'
         : (vs ? crest(co.club, 'tm-cr') + '<b>' + esc(cl.short || cl.name) + '</b><small class="tm-vs">x ' + esc(vs.short || vs.name) + ' · ' + (nx.home ? 'em casa' : 'fora') + ' · rodada ' + nx.round + '</small>' : '<b>' + esc(cl.short || cl.name) + '</b><small>escalação</small>') + LN_LEG;
@@ -742,6 +743,7 @@
           swap = null; draw();
         });
         st.querySelectorAll('[data-bp]').forEach(b => b.onclick = () => { const id = b.dataset.bp; sfx('tap');
+          if (by[id] && by[id].out > 0) return dmTreatPop(by[id], () => draw(), () => { c.keepBench(); c.save(); DM_BACK = () => time(toPlay); depMedico(); });
           if (swap !== null) return put(id, swap);
           selB = selB === id ? null : id; draw(); });
         // Melhores (Silvio 11/11): o maior geral de cada posição na formação de hoje; machucado e suspenso ficam fora
@@ -1616,7 +1618,7 @@
         (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') { FIN_BACK = null; financas(); } else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
       st.querySelector('#kb2-aux').onclick = () => { sfx('tap'); auxiliar(); };
-      st.querySelector('#kb2-dm').onclick = () => { sfx('tap'); depMedico(); };
+      st.querySelector('#kb2-dm').onclick = () => { sfx('tap'); DM_BACK = null; depMedico(); };
       st.querySelector('#kb2-back').onclick = () => { sfx('tap'); semana(); };
     });
   }
@@ -1662,10 +1664,25 @@
     const L = S.coDmDone ? S.coDmDone(co) : null; if (!L) return false; const d = S.coDmDoc(co);
     pop('<div class="acd-help"><span class="aux-h">' + face(d.fc, 'aux-fc', d.n) + '<b>' + esc(d.n) + '</b></span><p>A obra terminou: o departamento agora é <b>' + L.n + '</b>. ' + L.t + '.</p>' +
       '<span class="hl-ab"><button class="hl-btn dark" id="dmp-go">Ver</button><button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Departamento médico', w => {
-      w.querySelector('#dmp-go').onclick = () => { sfx('tap'); closePop(); depMedico(); }; }, 'hl-pop acd-pop tm-pop');
+      w.querySelector('#dmp-go').onclick = () => { sfx('tap'); closePop(); DM_BACK = null; depMedico(); }; }, 'hl-pop acd-pop tm-pop');
     C().save(); return true;
   }
   // ---------- Departamento médico (2026-11-11, desenho aprovado): a médica, os 5 níveis, a obra do próximo e os tratamentos ----------
+  // Janelinha do machucado (Time, 19/11): tratar agora se o Dep. médico tem tratamento livre; senão diz por quê e leva ao DM
+  let DM_BACK = null;
+  function dmTreatPop(p, done, toDm) {
+    const c = C(), co = c.co, d = S.coDm(co), doc = S.coDmDoc(co), L = S.CO_DM.lv, nT = S.CO_DM.treat[d.lv], left = S.coDmLeft(co);
+    const rd = n => U.D.plural(n, 'rodada', 'rodadas'), nm = esc(last(p.n));
+    const first = S.CO_DM.treat.findIndex(x => x > 0);
+    const txt = left ? nm + ' está fora por ' + rd(p.out) + '. Com o tratamento ' + (p.out > 1 ? 'volta uma rodada antes.' : 'fica livre para o próximo jogo.')
+      : nT ? 'Os tratamentos desta rodada já foram usados. ' + nm + ' volta em ' + rd(p.out) + '.'
+      : nm + ' está fora por ' + rd(p.out) + '. O departamento ' + L[d.lv].n + ' não trata: o tratamento começa no nível ' + L[first].n + (d.obra ? ' (em obra, falta ' + rd(d.obra.left) + ')' : '') + '.';
+    pop('<div class="acd-help"><span class="aux-h">' + face(doc.fc, 'aux-fc', doc.n) + '<b>' + esc(doc.n) + '</b></span><p>' + txt + (left ? ' <small class="dmp-l">' + (left > 1 ? left + ' tratamentos livres nesta rodada' : '1 tratamento livre nesta rodada') + '</small>' : '') + '</p>' +
+      '<span class="hl-ab">' + (left ? '<button class="hl-btn gold" id="dmp-y">Tratar</button>' : '<button class="hl-btn dark" id="dmp-dm">Ver Dep. médico</button>') + '<button class="hl-btn line" data-pop-x>Fechar</button></span></div>', 'Machucado', w => {
+      const y = w.querySelector('#dmp-y'); if (y) y.onclick = () => { if (!S.coDmTreat(co, p.id)) return; c.save(); sfx('win'); closePop(); done(); };
+      const g = w.querySelector('#dmp-dm'); if (g) g.onclick = () => { sfx('tap'); closePop(); toDm(); };
+    }, 'hl-pop acd-pop tm-pop');
+  }
   function depMedico() {
     const c = C(), co = c.co, d = S.coDm(co), L = S.CO_DM.lv, P = S.coDmPlan(co), doc = S.coDmDoc(co), BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const nT = S.CO_DM.treat[d.lv], left = S.coDmLeft(co), who = nT ? S.coDmWho(co) : [];
@@ -1689,7 +1706,7 @@
         '<div class="axv-lad">' + L.map(lv).join('') + '</div></div>' +
       '<div class="axv-r"><div class="axv-card">' + card + '</div>' +
         '<button class="tm-go' + (can ? '' : ' off') + '" id="dmv-go">' + (P.max ? 'Nível máximo' : d.obra ? 'Em obra' : P.why === 'caixa' ? 'Caixa curto' : 'Fazer a obra') + '</button></div></div>', st => {
-      st.querySelector('#dmv-back').onclick = () => { sfx('tap'); clube(); };
+      st.querySelector('#dmv-back').onclick = () => { sfx('tap'); const b = DM_BACK; DM_BACK = null; if (b) b(); else clube(); };
       cxBind(st, depMedico);
       st.querySelectorAll('[data-dmt]').forEach(b => b.onclick = () => {
         const w = S.coDmTreat(co, b.dataset.dmt); if (!w) return;

@@ -11047,3 +11047,15 @@ html.desk .fdt-ch small { line-height: 1.3; } /* zoom do computador cortava a pe
 /* Moedinha que abre a loja ganha um "+" (auditoria de navegação 2026-11-19: o novato não sabia que ali era a loja) */
 button.coin-pill .cp-plus { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-left: 2px; border-radius: 50%; background: #F2C230; color: #1B1606; font: 800 17px/1 var(--display); font-style: normal; }
 .coin-pill.cp-sm .cp-plus { width: 18px; height: 18px; font-size: 15px; }
+
+/* Machucado no banco do Time (2026-11-19): cruz vermelha no anel; tocar abre o tratamento do Dep. médico. Com tratamento
+   livre a cruz ganha o anel verde que pulsa */
+.tm .tm-bp.inj { opacity: .8; }
+.tm-bp > b.tm-ring { position: relative; }
+.tm-inj { position: absolute; right: -6px; top: -3px; width: 17px; height: 17px; border-radius: 50%; background: #E5484D; box-shadow: 0 0 0 2px #141517; }
+.tm-inj::before, .tm-inj::after { content: ''; position: absolute; left: 50%; top: 50%; background: #fff; border-radius: 1px; transform: translate(-50%, -50%); }
+.tm-inj::before { width: 9px; height: 3px; } .tm-inj::after { width: 3px; height: 9px; }
+.tm-bp.inj.ok .tm-inj { box-shadow: 0 0 0 2px #141517, 0 0 0 4px #7ED39A; animation: injPulse 1.6s ease-in-out infinite; }
+@keyframes injPulse { 50% { box-shadow: 0 0 0 2px #141517, 0 0 0 6px rgba(126, 211, 154, .25); } }
+@media (prefers-reduced-motion: reduce) { .tm-bp.inj.ok .tm-inj { animation: none; } }
+.dmp-l { display: block; margin-top: 6px; font: 700 13px/1.2 var(--body); color: #2E7D4F; }
