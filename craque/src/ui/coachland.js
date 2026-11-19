@@ -1596,6 +1596,7 @@
     const c = C(), co = c.co, cl = club(co.club), f = S.coFin(co), B = co.board, pos = S.coPos(co), conf = Math.round(B.conf);
     const exp = co.squad.filter(p => p.ct <= 1).length, pres = S.coPres ? S.coPres(co) : null;
     const est = S.coEst && U.EST ? S.coEst(co) : null, aux = S.coAux(co), auxLv = S.coAuxLv(co), dm = S.coDm(co);
+    const dmN = S.coDmLeft(co) ? Math.min(S.coDmLeft(co), S.coDmWho(co).length) : 0;
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     // x: um detalhe a mais que só aparece no computador (#ld.wide, desenho aprovado 2026-11-11)
     const tile = (id, k, t, v, sub, cc, x) => '<button class="kb2-t"' + (id ? ' id="' + id + '"' : '') + ' data-k="' + k + '"><b>' + t + '</b><span><em class="' + (cc || '') + '">' + v + '</em><small>' + sub + '</small>' + (x ? '<i class="kb2-x">' + x + '</i>' : '') + '</span></button>';
@@ -1616,7 +1617,7 @@
         '<button class="kb2-pr fc kb2-ax" id="kb2-aux">' + auxFace(co, 'kb2-fc') + '<div><small>AUXILIAR · ' + esc(auxLv.n.toUpperCase()) + '</small><b>' + esc(aux.n) + '</b>' +
           '<span class="go">' + (aux.crs ? 'em curso · ' + U.D.plural(aux.crs.left, 'rodada', 'rodadas') : aux.lv >= S.CO_AUX.lv.length - 1 ? 'licença máxima' : 'subir de licença ›') + '</span></div></button>' +
         // Departamento médico embaixo da auxiliar (2026-11-11); o presidente foi para o canto da diretoria
-        '<button class="kb2-pr fc kb2-ax" id="kb2-dm">' + face(S.coDmDoc(co).fc, 'kb2-fc', 'Departamento médico') + '<div><small>DEP. MÉDICO · ' + esc(S.CO_DM.lv[dm.lv].n.toUpperCase()) + '</small><b>' + esc(S.coDmDoc(co).n) + '</b>' +
+        '<button class="kb2-pr fc kb2-ax" id="kb2-dm">' + (dmN ? '<i class="tm-dot">' + dmN + '</i>' : '') /* a mesma bolinha do botão Clube (Silvio 19/11) */ + face(S.coDmDoc(co).fc, 'kb2-fc', 'Departamento médico') + '<div><small>DEP. MÉDICO · ' + esc(S.CO_DM.lv[dm.lv].n.toUpperCase()) + '</small><b>' + esc(S.coDmDoc(co).n) + '</b>' +
           '<span class="go">' + (dm.obra ? 'em obra · ' + U.D.plural(dm.obra.left, 'rodada', 'rodadas') : S.coDmLeft(co) && S.coDmWho(co).length ? 'tratar ' + (S.coDmLeft(co) > 1 ? S.coDmLeft(co) + ' jogadores' : '1 jogador') + ' ›' : dm.lv >= S.CO_DM.lv.length - 1 ? 'nível máximo' : 'melhorar ›') + '</span></div></button>' +
         (est ? '' : '<span class="rs-gap"></span><p class="kb2-soon">Estádio e base chegam depois</p>') + '</div></div>', st => {
       st.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { sfx('tap'); const k = b.dataset.k; if (k === 'fin') { FIN_BACK = null; financas(); } else if (k === 'ele') elenco(); else if (k === 'tro') trofeus(); else if (k === 'hall') hall(); else if (k === 'est') estadio(); });
