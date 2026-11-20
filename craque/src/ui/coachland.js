@@ -2998,6 +2998,36 @@
     ['Idade', p => p.age, 'a'],
     ['Contrato', p => p.ct, 'ct']
   ];
+  // Estatísticas da temporada (pedido de jogador, 20/11; Silvio: "um botão de estatísticas perto da ordem, como no WSC e
+  // no EA FC"): o botão troca as colunas do Elenco por J, G, A, amarelos, vermelhos e nota média, e a Ordem por EL_SORD.
+  // Tudo sai dos logs da temporada (liga, copa, continental): gols em ev, notas em rt, e desde 20/11 as e yc/rc
+  const EL_SORD = [['Gols', s => s.g, 'g'], ['Assistências', s => s.a, 'a'], ['Nota', s => s.avg, 'nt'], ['Jogos', s => s.j, 'j'], ['Amarelos', s => s.y, 'y'], ['Vermelhos', s => s.r, 'r'], ['Craque do jogo', s => s.mom, '']];
+  elenco.sv = false;
+  function seasonStats(co) {
+    const ss = co.ss || {}, L = [].concat(ss.log || [], (ss.cup && ss.cup.log) || [], (ss.cont && ss.cont.log) || []).map((l, i) => [l, i]);
+    L.sort((x, y) => (x[0].r | 0) - (y[0].r | 0) || x[1] - y[1]);
+    const R = {}, byN = {}, gk = {};
+    co.squad.forEach(p => { R[p.id] = { j: 0, t: 0, g: 0, a: 0, y: 0, r: 0, mom: 0, cs: 0, nt: [], avg: 0 }; if (!(p.n in byN)) byN[p.n] = p.id; gk[p.id] = p.pos === 'GOL'; });
+    const add = (arr, k) => (arr || []).forEach(n => { const id = byN[n]; if (id !== undefined) R[id][k]++; });
+    L.forEach(([l]) => {
+      (l.rt || []).forEach((e, i) => { const x = R[e.id]; if (!x) return; x.j++; if (!e.sub) x.t++; x.nt.push(e.r); if (i === 0) x.mom++; if (gk[e.id] && l.ga === 0 && (e.min || 0) >= 60) x.cs++; });
+      add(l.ev, 'g'); add(l.as, 'a'); add(l.yc, 'y'); add(l.rc, 'r');
+    });
+    Object.keys(R).forEach(k => { const x = R[k]; x.avg = x.nt.length ? x.nt.reduce((a, v) => a + v, 0) / x.nt.length : 0; });
+    return R;
+  }
+  const ntCl = v => !v ? 'n0' : v >= 7 ? 'n3' : v >= 6 ? 'n2' : 'n1';
+  const ntTx = v => v ? v.toFixed(1).replace('.', ',') : '–';
+  const SV_IC = '<svg viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="9" width="3.5" height="7" rx="1" fill="currentColor"/><rect x="7.25" y="4" width="3.5" height="12" rx="1" fill="currentColor"/><rect x="12.5" y="7" width="3.5" height="9" rx="1" fill="currentColor"/></svg>';
+  function svCard(q, x) {
+    if (!x || !x.j) return '<div class="lde2-nj"><b>Ainda não jogou</b><small>nesta temporada</small></div>';
+    const cell = (k, v, cl) => '<span' + (cl ? ' class="' + cl + '"' : '') + '><small>' + k + '</small><b>' + v + '</b></span>';
+    const gkq = q.pos === 'GOL', l5 = x.nt.slice(-5);
+    return '<div class="lde2-sg">' + cell('JOGOS', x.j + '<i>' + (x.j - x.t ? (x.j - x.t) + ' do banco' : 'titular') + '</i>') + cell('NOTA MÉDIA', '<em class="lde2-nt ' + ntCl(x.avg) + '">' + ntTx(x.avg) + '</em>') +
+      cell('GOLS', x.g) + (gkq ? cell('SEM SOFRER', x.cs) : cell('ASSISTÊNCIAS', x.a)) + cell('CRAQUE', x.mom + ' <i class="st">★</i>') +
+      cell('CARTÕES', '<u class="lde2-cd y"></u>' + x.y + ' <u class="lde2-cd r"></u>' + x.r) + '</div>' +
+      '<div class="lde2-l5"><small>ÚLTIMOS ' + l5.length + '</small><span>' + l5.map(v => '<i class="' + ntCl(v) + '" style="height:' + Math.max(12, Math.min(100, (v - 3) / 7 * 100)).toFixed(0) + '%"><b>' + ntTx(v) + '</b></i>').join('') + '</span></div>';
+  }
   // back: de onde veio (proposta recebida, Time); sem nada, volta ao Clube. As chamadas de dentro (aba, linha, ordem) mantêm
   let EL_BACK = null;
   // Rescindir o contrato (Silvio 2026-11-11: "não dá pra fazer uns cortes de custo antes da janela?"): vale em qualquer
@@ -3046,18 +3076,22 @@
   }
   function elenco(tab, sel, back) {
     if (back) EL_BACK = back; else if (tab === undefined && sel === undefined) EL_BACK = null;
-    const c = C(), co = c.co, T = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
-    tab = tab || 0; if (S.coNums) S.coNums(co.squad); // os mesmos números do campinho
+    const c = C(), co = c.co, T0 = [['Goleiros', ['GOL']], ['Defesa', ['ZAG', 'LAT']], ['Meio', ['MEI']], ['Ataque', ['ATA']]];
+    const SV = !!elenco.sv, T = SV ? [['Todos', null]].concat(T0) : T0, SS = SV ? seasonStats(co) : null;
+    tab = Math.min(tab || 0, T.length - 1);
+    const eso = Math.min(co.eso || 0, EL_SORD.length - 1), SO = EL_SORD[eso], sx = p => SS[p.id] || { j: 0, t: 0, g: 0, a: 0, y: 0, r: 0, mom: 0, nt: [], avg: 0 }; if (S.coNums) S.coNums(co.squad); // os mesmos números do campinho
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
     const eo = Math.min(co.eo || 0, EL_ORD.length - 1), O = EL_ORD[eo], MKL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 4L6 12l11 8z"/></svg>', MKR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l11 8-11 8z"/></svg>';
-    const L = co.squad.filter(p => T[tab][1].includes(p.pos)).sort((a, b) => O[1](a) - O[1](b) || b.ovr - a.ovr);
+    const L = co.squad.filter(p => !T[tab][1] || T[tab][1].includes(p.pos)).sort(SV ? (a, b) => SO[1](sx(b)) - SO[1](sx(a)) || sx(b).avg - sx(a).avg || b.ovr - a.ovr : (a, b) => O[1](a) - O[1](b) || b.ovr - a.ovr);
     const q = L.find(p => p.id === sel) || L[0];
     const folha = co.squad.reduce((a, p) => a + (p.wage || 0), 0);
     const ctT = n => n <= 0 ? 'acaba agora' : n === 1 ? 'fim do ano' : U.D.plural(n, 'ano', 'anos');
     const tag = p => p.out ? ['dn', 'lesionado'] : p.sus ? ['dn', 'suspenso'] : c.pend(p) ? ['y', 'pendurado'] : S.coMktListed(co, p) ? ['g', 'à venda'] : p.prom ? ['y', 'promessa'] : null; // promessa = a chance prometida na conversa ainda vale
     const ovD = p => { const d = S.coOvrDelta(co, p); return d ? '<sup class="' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '+' : '−') + Math.abs(d) + '</sup>' : ''; }; // +1 / −2: o geral contra o fim da temporada passada
     const rows = L.map(p => { const t = tag(p);
-      return '<button class="lde2-r' + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + natFlag(p) + esc(p.n) + '</b><small>' + S.coPosAb(p) + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>' +
+      const nm = '<button class="lde2-r' + (SV ? ' sv' : '') + (q && p.id === q.id ? ' on' : '') + (c.avail(p) ? '' : ' out') + '" data-id="' + p.id + '"><i>' + (p.num || '') + '</i><span><b>' + natFlag(p) + esc(p.n) + '</b><small>' + S.coPosAb(p) + '</small>' + (t ? '<em class="' + t[0] + '">' + t[1] + '</em>' : '') + '</span>';
+      if (SV) { const x = sx(p), cc = (v, k) => '<span class="c' + (v ? k : ' z') + '">' + v + '</span>'; return nm + cc(x.j, '') + cc(x.g, '') + cc(x.a, '') + cc(x.y, ' cy') + cc(x.r, ' cr') + '<span class="lde2-nt ' + ntCl(x.avg) + '">' + ntTx(x.avg) + '</span></button>'; }
+      return nm +
         '<span class="a">' + p.age + '</span><span class="o">' + p.ovr + moAr(p, 'mo-in') + ovD(p) + '</span>' + (O[4] ? '<span class="ct x">' + O[4](p, c) + '</span>' : '<span class="ct' + (p.ct <= 1 ? ' dn' : '') + '">' + ctT(p.ct) + '</span>') + '</button>'; }).join('');
     let card = '';
     if (q) {
@@ -3079,14 +3113,17 @@
           '<button class="lde2-resc" id="lde-resc"' + (canS ? '' : ' disabled') + '>Rescindir</button></div>' +
         (hint ? '<small class="lde2-hint">' + hint + '</small>' : '') : bars) + '</div>';
     }
-    show('<div class="lde2"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span> jogadores · folha ' + c.mi(folha) + '/rodada</small>' +
-      '<span class="lde2-ord"><button class="mk-ar" data-eo="-1" aria-label="ordem anterior">' + MKL + '</button><span><small>ORDEM</small><b>' + O[0] + '</b></span><button class="mk-ar" data-eo="1" aria-label="ordem seguinte">' + MKR + '</button></span></div>' +
-      '<div class="lde2-tabs">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small></button>').join('') + '</div>' +
-      '<div class="lde2-l"><div class="lde2-h"><i></i><span>JOGADOR</span><span class="a' + (O[2] === 'a' ? ' on' : '') + '">IDADE</span><span class="o' + (O[2] === 'o' ? ' on' : '') + '">GERAL</span><span class="ct' + (O[2] === 'ct' ? ' on' : '') + '">' + (O[3] || 'CONTRATO') + '</span></div>' + rows + '</div>' + card + '</div>', st => {
+    if (q && SV) { const i0 = card.indexOf('<div class="lde2-ch">'), i1 = card.indexOf('<div class="lde2-seg">'); card = '<div class="lde2-c sv">' + card.slice(i0, i1) + svCard(q, SS[q.id]) + '</div>'; }
+    show('<div class="lde2' + (SV ? ' sv' : '') + '"><div class="tm-h"><button class="tcr-back" id="lde-back" aria-label="Voltar">' + BK + '</button><b>Elenco</b><small><span class="lde2-n' + (co.squad.length >= S.CO_MKT.maxSquad ? ' full' : '') + '">' + co.squad.length + '/' + S.CO_MKT.maxSquad + '</span>' + (SV ? '' : ' jogadores · folha ' + c.mi(folha) + '/rodada') + '</small>' +
+      '<button class="lde2-sv' + (SV ? ' on' : '') + '" id="lde-sv" aria-pressed="' + SV + '">' + SV_IC + 'Estatísticas</button>' +
+      '<span class="lde2-ord"><button class="mk-ar" data-eo="-1" aria-label="ordem anterior">' + MKL + '</button><span><small>ORDEM</small><b>' + (SV ? SO[0] : O[0]) + '</b></span><button class="mk-ar" data-eo="1" aria-label="ordem seguinte">' + MKR + '</button></span></div>' +
+      '<div class="lde2-tabs' + (SV ? ' t5' : '') + '">' + T.map(([l, ps], i) => '<button data-et="' + i + '"' + (i === tab ? ' class="on"' : '') + '>' + l + (SV ? '' : ' <small>' + co.squad.filter(p => ps.includes(p.pos)).length + '</small>') + '</button>').join('') + '</div>' +
+      '<div class="lde2-l">' + (SV ? '<div class="lde2-h sv"><i></i><span>JOGADOR</span>' + [['J', 'j'], ['G', 'g'], ['A', 'a'], ['<u class="lde2-cd y"></u>', 'y'], ['<u class="lde2-cd r"></u>', 'r'], ['NOTA', 'nt']].map(h => '<span class="c' + (SO[2] === h[1] ? ' on' : '') + '">' + h[0] + '</span>').join('') + '</div>' : '<div class="lde2-h"><i></i><span>JOGADOR</span><span class="a' + (O[2] === 'a' ? ' on' : '') + '">IDADE</span><span class="o' + (O[2] === 'o' ? ' on' : '') + '">GERAL</span><span class="ct' + (O[2] === 'ct' ? ' on' : '') + '">' + (O[3] || 'CONTRATO') + '</span></div>') + rows + '</div>' + card + '</div>', st => {
       st.querySelectorAll('[data-et]').forEach(b => b.onclick = () => { sfx('tap'); elenco(+b.dataset.et); });
       st.querySelectorAll('.lde2-r').forEach(b => b.onclick = () => { sfx('tap'); const y = st.querySelector('.lde2-l').scrollTop; elenco(tab, b.dataset.id); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       st.querySelector('#lde-back').onclick = () => { sfx('tap'); const b = EL_BACK; EL_BACK = null; if (b) b(); else clube(); };
-      st.querySelectorAll('[data-eo]').forEach(b => b.onclick = () => { sfx('tap'); co.eo = (eo + (+b.dataset.eo) + EL_ORD.length) % EL_ORD.length; c.save(); elenco(tab); }); // volta ao primeiro da ordem nova (o escolhido podia sumir da vista)
+      st.querySelectorAll('[data-eo]').forEach(b => b.onclick = () => { sfx('tap'); if (SV) co.eso = (eso + (+b.dataset.eo) + EL_SORD.length) % EL_SORD.length; else co.eo = (eo + (+b.dataset.eo) + EL_ORD.length) % EL_ORD.length; c.save(); elenco(tab); });
+      st.querySelector('#lde-sv').onclick = () => { sfx('tap'); elenco.sv = !SV; if (!SV) elenco(0); else elenco(q ? Math.max(0, T0.findIndex(x => x[1].includes(q.pos))) : 0, q && q.id); }; // ligou: Todos com o primeiro da ordem
       const me = () => elenco(tab, q && q.id);
       st.querySelectorAll('[data-ec]').forEach(b => b.onclick = () => { sfx('tap'); elenco.ct = +b.dataset.ec; const y = st.querySelector('.lde2-l').scrollTop; me(); const l = document.querySelector('.lde2-l'); if (l) l.scrollTop = y; });
       const rn = st.querySelector('#lde-ren:not([disabled])'); if (rn) rn.onclick = () => { sfx('tap'); contrato(q.id, me); };

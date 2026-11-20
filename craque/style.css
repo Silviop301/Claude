@@ -11074,3 +11074,39 @@ button.coin-pill .cp-plus::before { width: 10px; height: 2.5px; } button.coin-pi
 .kb2-pr#kb2-dm { position: relative; } #kb2-dm > .tm-dot { right: 10px; top: 10px; text-align: center; }
 /* Bolinha no cartão Elenco do Clube: titulares com contrato acabando nas 5 últimas rodadas (2026-11-19) */
 .kb2-t { position: relative; } .kb2-t > .tm-dot { right: 12px; top: 14px; text-align: center; }
+/* Estatísticas da temporada no Elenco (2026-11-20, pedido de jogador; ideia do Silvio: botão perto da Ordem, como no WSC e no EA FC) */
+.lde2 .tm-h small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-bottom: .16em; margin-bottom: -.16em; }
+.ld-st button.lde2-sv { margin-left: auto; flex: none; height: 44px; padding: 0 14px; border-radius: 12px; background: #141517; color: #B9C9BF; display: inline-flex; align-items: center; gap: 8px; font: 800 18px/1 var(--display); box-shadow: inset 0 0 0 2px rgba(243, 241, 234, .12); }
+.ld-st button.lde2-sv svg { width: 18px; height: 18px; }
+.ld-st button.lde2-sv.on { background: var(--gold); color: #13201A; box-shadow: none; }
+.lde2-sv + .lde2-ord { margin-left: 0; }
+.lde2-tabs.t5 { grid-template-columns: .8fr 1fr 1fr 1fr 1fr; }
+.lde2-tabs.t5 button { font-size: 18px !important; }
+.lde2-h.sv, .lde2-r.sv { grid-template-columns: 30px minmax(0, 1fr) 36px 36px 36px 32px 32px 56px; padding: 0 10px; }
+.ld-st .lde2-r.sv { padding: 0 10px !important; }
+.lde2-h.sv .c { text-align: center; } .lde2-h.sv .c.on { color: var(--gold); }
+.lde2-r.sv .c { text-align: center; font: 800 18px/1 var(--display); color: #F3F1EA; font-variant-numeric: tabular-nums; }
+.lde2-r.sv .c.z { opacity: .35; } .lde2-r.sv .c.cy { color: #F5D76E; } .lde2-r.sv .c.cr { color: #FF8A8E; }
+.lde2-nt { justify-self: end; width: 50px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font: 800 18px/1 var(--display); font-style: normal; font-variant-numeric: tabular-nums; }
+.lde2-nt.n3 { background: #1f5a3a; color: #CFF5DA; } .lde2-nt.n2 { background: #3b3416; color: #F5E08A; } .lde2-nt.n1 { background: #4a2a1c; color: #FFC2A6; } .lde2-nt.n0 { color: #6f7d75; }
+.lde2-cd { display: inline-block; width: 9px; height: 13px; border-radius: 2px; vertical-align: -1px; text-decoration: none; }
+.lde2-cd.y { background: #F2C230; } .lde2-cd.r { background: #E5484D; }
+.lde2-c.sv { gap: 8px; padding: 12px 14px 10px; }
+.lde2-c.sv .lde2-ch > b.tm-ring { width: 52px; height: 52px; font-size: 24px; }
+.lde2-sg { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.lde2-sg > span { background: rgba(255, 255, 255, .62); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.lde2-sg small { font: 700 12px/1 var(--body); letter-spacing: .02em; color: #4b5a52; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lde2-sg b { font: 800 21px/1 var(--display); display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.lde2-sg b i { font: 700 12px/1 var(--body); font-style: normal; color: #4b5a52; }
+.lde2-sg b i.st { font-size: 16px; color: #b8860b; }
+.lde2-sg .lde2-nt { justify-self: start; width: 52px; height: 24px; font-size: 18px; }
+.lde2-sg .lde2-nt.n0 { background: rgba(19, 32, 26, .08); }
+.lde2-sg .lde2-cd { width: 10px; height: 14px; }
+.lde2-l5 { margin-top: auto; display: flex; flex-direction: column; gap: 4px; }
+.lde2-l5 small { font: 700 12px/1 var(--body); letter-spacing: .08em; color: #4b5a52; }
+.lde2-l5 > span { height: 46px; display: flex; align-items: flex-end; gap: 6px; }
+.lde2-l5 i { flex: 1; border-radius: 6px 6px 3px 3px; position: relative; display: flex; justify-content: center; }
+.lde2-l5 i.n3 { background: #2f8a57; } .lde2-l5 i.n2 { background: #c9a227; } .lde2-l5 i.n1 { background: #d9774a; }
+.lde2-l5 i b { position: absolute; top: 4px; font: 800 13px/1 var(--display); color: #fff; }
+.lde2-nj { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+.lde2-nj b { font: 800 22px/1 var(--display); } .lde2-nj small { font: 700 14px/1 var(--body); color: #4b5a52; }

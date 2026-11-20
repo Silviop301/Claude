@@ -1078,7 +1078,8 @@
             else if (tk) who = tk.n;
           }
           if (sp === 'esc') { m.ck = m.ck || { us: 0, them: 0 }; m.ck[sd]++; }
-          m.ev.push({ m: m.min, t: 'gol', s: sd, p: who, l, sp, by: by2 }); stop = { t: 'gol', s: sd, p: who, l, sp, by: by2 };
+          const gev = { m: m.min, t: 'gol', s: sd, p: who, l, sp, by: by2 }, ast = assistPick(m, S0, who, sp, by2); if (ast) gev.a = ast;
+          m.ev.push(gev); stop = { t: 'gol', s: sd, p: who, l, sp, by: by2 };
         }
         else {
           // Bola parada que não entra (pênalti defendido ou para fora, falta na barreira, cabeçada no escanteio): só muda o rótulo
@@ -1252,6 +1253,8 @@
     if (m.st) e.st = m.st;
     // como foi o chute no campinho, para o texto do lance bater com o que se viu: de cabeça ou de fora da área
     if (info.kind === 'pen') { e.sp = 'pen'; e.l = 'c'; } else if (info.kind === 'cabeca') e.hd = 1; else if (info.kind === 'falta') { e.fk = 1; if (out === 'gol') e.sp = 'falta'; } else if (info.box === false) e.far = 1;
+    // assistência: o passe de verdade do cérebro (até 10 s antes do chute), nunca no pênalti, na falta direta nem do próprio autor
+    if (out === 'gol' && info.ast != null && info.kind !== 'pen' && info.kind !== 'falta' && info.kind !== 'contra') { const q = on.find(x => x.num === info.ast); if (q && q.id !== p.id) e.a = q.n; }
     e.livre = 1; m.ev.push(e); scoutGoal(m, e);
     return e;
   };
@@ -1472,6 +1475,22 @@
     let x = r() * w.reduce((a, b) => a + b, 0);
     for (let i = 0; i < w.length; i++) { x -= w[i]; if (x <= 0) return m[s.xi[i]] ? m[s.xi[i]].n : ''; }
     return '';
+  }
+  // Assistência do gol (2026-11-20, Silvio: "estatística dos jogadores na temporada"): no gol do motor sai de um sorteio preso ao
+  // jogo, ao minuto e ao autor (hash: não gasta o sorteio da carreira, o placar não muda); meia e ponta dão mais passe, e o Passe
+  // pesa. Escanteio e falta cruzada = quem bateu; pênalti e falta direta não têm. ~3 de 4 gols de bola rolando têm assistência.
+  // No ao vivo do cérebro a assistência é o passe de verdade (`info.ast`, em S.coMatchShot).
+  const AST_W = { GOL: 0.05, ZAG: 0.35, LAT: 1.3, MEI: 2.6, ATA: 1.8 };
+  function assistPick(m, s, who, sp, by2) {
+    if (sp === 'esc' || sp === 'fc') return by2 || undefined;
+    if (sp) return undefined;
+    const u = hash('ast|' + (m.vs || '') + '|' + (m.round | 0) + '|' + m.min + '|' + who + '|' + (m.gh + m.ga)) / 4294967296;
+    if (u >= 0.76) return undefined;
+    const mm = byId(s.squad), on = s.xi.map(id => mm[id]).filter(p => p && p.n !== who);
+    const w = on.map(p => (AST_W[p.pos] || 1) * Math.max(0.3, 1 + (Array.isArray(p.at) && p.pos !== 'GOL' ? (p.at[1] - 60) / 40 : 0)));
+    let x = (u / 0.76) * w.reduce((t, v) => t + v, 0);
+    for (let i = 0; i < on.length; i++) { x -= w[i]; if (x <= 0) return on[i].n; }
+    return on.length ? on[on.length - 1].n : undefined;
   }
   // Quanto cada um cansa pelo Físico (Físico 60 = normal; 84 cansa 20% menos, 36 cansa 20% mais); goleiro quase não cansa
   function enFis(p) { if (p.pos === 'GOL') return CO.enGK; const f = Array.isArray(p.at) ? p.at[5] : 60; return clamp(1 + (60 - f) / 120, 0.8, 1.2); }
@@ -1821,6 +1840,9 @@
   }
   function rateAfter(co, m, log, gf, ga) {
     log.rt = rateMatch(co, m, gf, ga);
+    // Estatísticas da temporada (Elenco > Estatísticas): assistências e cartões dos seus, por nome (como os gols em log.ev)
+    const us = (m.ev || []).filter(e => e.s === 'us'); log.as = us.filter(e => e.t === 'gol' && e.a).map(e => e.a);
+    log.yc = us.filter(e => e.t === 'amarelo').map(e => e.p); log.rc = us.filter(e => e.t === 'vermelho').map(e => e.p);
     log.rt.forEach(x => { const p = co.squad.find(q => q.id === x.id); if (!p) return; p.notes = (p.notes || []).concat([x.r]).slice(-5);
       if (x.r >= 7.5) p.mo = clamp(p.mo + 2, 0, 100); else if (x.r < 5.5) p.mo = clamp(p.mo - 2, 0, 100); });
   }
