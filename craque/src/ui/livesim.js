@@ -26,11 +26,11 @@
     const hx = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
     const C = { cre: hx('#F4F0E4'), ink: hx('#15171A'), gold: hx('#F2C230'), gold2: hx('#C8941E'), navy: hx('#13264A'), red: hx('#D03A2F'), orange: hx('#FF7A1A'), white: hx('#FBFAF5'), teal: hx('#1C8C8C') };
     const PAT = {
-      liga: p => pentIn(p, 0.37) > 0 ? C.ink : C.cre,
+      liga: p => pentIn(p, 0.33) > 0 ? C.ink : C.cre,
       copa: p => { const b = Math.abs(p[2]); if (b < 0.2) return b > 0.15 ? C.navy : C.gold; return Math.abs(p[0]) < 0.08 ? C.navy : C.white; },
       cont: p => { const s = Math.sin(3 * Math.atan2(p[1], p[0]) + 3.2 * p[2]); return s > 0.45 ? (s > 0.62 ? C.red : C.navy) : C.white; },
       cont2: p => { const ph = Math.atan2(p[1], p[0]), a = Math.abs(p[2] - 0.42 * Math.sin(3 * ph)); if (a < 0.24) return a > 0.18 ? C.navy : C.orange; return Math.abs(p[2] + 0.42 * Math.sin(3 * ph + 1)) < 0.06 ? C.teal : C.white; },
-      final: p => { const m = pentIn(p, 0.36); return m > 0 ? (m < 0.05 ? C.ink : C.gold2) : C.gold; },
+      final: p => pentIn(p, 0.33) > 0 ? C.gold2 : C.gold,
     };
     const rot = (ax, a) => { const x = ax[0], y = ax[1], z = ax[2], c = Math.cos(a), s = Math.sin(a), t = 1 - c; return [[t * x * x + c, t * x * y - s * z, t * x * z + s * y], [t * x * y + s * z, t * y * y + c, t * y * z - s * x], [t * x * z - s * y, t * y * z + s * x, t * z * z + c]]; };
     const mul = (A, B) => A.map(r => [0, 1, 2].map(j => r[0] * B[0][j] + r[1] * B[1][j] + r[2] * B[2][j]));
@@ -44,7 +44,7 @@
         for (let s = 0; s < 4; s++) {
           const x = (i + 0.5 + SS[s][0] - h) / R, y = (j + 0.5 + SS[s][1] - h) / R, q = x * x + y * y; if (q > 1) continue;
           const z = Math.sqrt(1 - q), p = [M[0][0] * x + M[1][0] * y + M[2][0] * z, M[0][1] * x + M[1][1] * y + M[2][1] * z, M[0][2] * x + M[1][2] * y + M[2][2] * z];
-          const c = f(p), l = 0.62 + 0.38 * Math.max(0, -0.45 * x - 0.55 * y + 0.7 * z), sp = Math.pow(Math.max(0, -0.4 * x - 0.5 * y + 0.77 * z), 24) * 70;
+          const c = f(p), l = 0.9 + 0.1 * Math.max(0, -0.45 * x - 0.55 * y + 0.7 * z), sp = 0; // chapada (20/11, Silvio: "diferente demais do campo e dos jogadores"): quase sem luz e sem brilho
           r += Math.min(255, c[0] * l + sp); gg += Math.min(255, c[1] * l + sp); b += Math.min(255, c[2] * l + sp); a++;
         }
         if (!a) continue; const o = (j * size + i) * 4; D[o] = r / a; D[o + 1] = gg / a; D[o + 2] = b / a; D[o + 3] = 255 * a / 4;
@@ -159,7 +159,7 @@
     const _e = (typeof process !== 'undefined' && process.env) || {}, KEEP_O = +(_e.KEEP_O || 3.4), KEEP_L = +(_e.KEEP_L || 1.5), HOLD0 = +(_e.HOLD0 || 1.5), MKEEP = +(_e.MKEEP || 0.6), PRK = +(_e.PRK || 3), MIDMK = _e.MIDMK !== '0', PASS_V = +(_e.PASS_V || 0.9), SHOT_PRE = +(_e.SHOT_PRE || 0.14), GK_DIVE = +(_e.GK_DIVE || 0.42), SHOT_DRAG = +(_e.SHOT_DRAG || 0.24), SBT = +(_e.SBT || 0.8), V_SPR = +(_e.V_SPR || 7.8), V_DRB = +(_e.V_DRB || 6.4), V_CALM = +(_e.V_CALM || 5.5), CALM0 = +(_e.CALM0 || 1.4), CALMK = +(_e.CALMK || 0.4), CALMG = +(_e.CALMG || 1), ACC_C = +(_e.ACC_C || 6), ACC_S = +(_e.ACC_S || 11), ACC_B = +(_e.ACC_B || 12), ACC_D = +(_e.ACC_D || 15), VTK = +(_e.VTK || 4), SUPP = +(_e.SUPP || 22), CLOSE = +(_e.CLOSE === undefined ? 55 : _e.CLOSE), CLOSE_V = +(_e.CLOSE_V || 1.08), DRB_R = +(_e.DRB_R === undefined ? 1 : _e.DRB_R), DRB_D = +(_e.DRB_D || 5.5), DRB_T = +(_e.DRB_T || 0.75), DRB_A = +(_e.DRB_A || 2.2), LIVRE = +(_e.LIVRE === undefined ? 0.14 : _e.LIVRE), LIVRE_P = +(_e.LIVRE_P || 0.5), LIVRE_L = +(_e.LIVRE_L || 9), LIVRE_X = +(_e.LIVRE_X || 1.3), LIVRE_LK = +(_e.LIVRE_LK || 0.4), LIVRE_LP = +(_e.LIVRE_LP || 0.7), LIVRE_E = +(_e.LIVRE_E === undefined ? 0.5 : _e.LIVRE_E), CLOSE_LD = +(_e.CLOSE_LD === undefined ? 0.7 : _e.CLOSE_LD), ATT_R = +(_e.ATT_R || 1), ATT_CD = +(_e.ATT_CD || 2.5), ATT_MAX = +(_e.ATT_MAX || 14), FXG_K = +(_e.FXG_K || 2.18), FXG_G = +(_e.FXG_G || 0.4), ATT_G = +(_e.ATT_G || 1.3), DISP = +(_e.DISP === undefined ? 1 : _e.DISP), DISP_M = +(_e.DISP_M || 3), DISP_R = +(_e.DISP_R || 3), CELEB = +(_e.CELEB || 9), CELEB_J = 2.2, BU_CLR = +(_e.BU_CLR === undefined ? 0.22 : _e.BU_CLR), BU_LONG = +(_e.BU_LONG === undefined ? 0.3 : _e.BU_LONG), BU_GK = +(_e.BU_GK === undefined ? 0.3 : _e.BU_GK), BU_SAFE = +(_e.BU_SAFE === undefined ? 0.12 : _e.BU_SAFE), BU_OUT = +(_e.BU_OUT === undefined ? 0.3 : _e.BU_OUT), BU_ROLL = +(_e.BU_ROLL === undefined ? 0.7 : _e.BU_ROLL), BU_RCV = +(_e.BU_RCV === undefined ? 2.4 : _e.BU_RCV), SLOW_T = 0.9, SLOW_K = 0.3, CATCH_MAX = 1.2, BALL_OFF = 12.5; // CELEB: segundos da comemoração do gol (era 2: ninguém chegava ao canto)
     let DISPN = 0; // bolas que ficaram com o adversário mais perto de onde ela caiu (disputa)
     let poss = 0, mode = o.t0 > 0 ? 'ko' : 'wait', modeT = 1.2, koSide = 0, hero = null, bias = [1, 1], mom = 0, momT = 0, runT = 2, defT = 0, clk = 0;
-    const BK = BALLP.kinds.includes(o.ball) ? o.ball : 'liga'; let bM = BALLP.rot([1, 0, 0], 0.5), bPrev = null, bSpr = null, bSz = 0, bDirty = true; // desenho da bola (só tela)
+    const BK = BALLP.kinds.includes(o.ball) ? o.ball : 'liga'; let bM = BALLP.rot([1, 0, 0], 0.5), bPrev = null, bSpr = null, bSz = 0, bDirty = true, bNA = 0, bDraw = null, bNP = null, bNX = 0, bNY = 0, bNT = 0; // desenho da bola (só tela)
     let curT = o.t0 || 0, mClk = 0, bxT = 50, lastPasser = null, lastPassClk = -9, frozen = false, en = null, cv = null, g = null, W = 0, H = 0, FH = 0, OY = 0, SK = 1, dpr = 1, raf = 0, last = 0, alive = true;
     stRefresh();
     const goals = (o.goals || []).map(e => ({ m: e.m, side: e.side, me: !!e.me, as: !!e.as, done: e.m <= (o.t0 || 0) && (o.t0 || 0) > 0 }));
@@ -2425,8 +2425,16 @@
       // de BALL_OFF do centro de um boneco é desenhada na borda dele, do lado onde está (só desenho; a bola de verdade não muda)
       let bNudge = false;
       if (air < 3 * k && !toss) { const R = BALL_OFF * k; let best = null, bd2 = R * R;
-        ALL.forEach(p => { if (p.off || p.gone || (bdo && p.dr && !p.dr.who && p.dr.m === p && /caneta|meialua/.test(p.dr.kind) && p.dr.t < 1)) return; const o = p === ball.owner && bdo ? drOff(p.dr) : null, px = X(p.x + (o ? o[0] : 0)), py = Y(p.y + (o ? o[1] : 0)), d2 = (bx - px) * (bx - px) + (by - py) * (by - py); if (d2 < bd2) { bd2 = d2; best = [px, py]; } });
-        if (best) { let dx = bx - best[0], dy = by - best[1], d = Math.hypot(dx, dy); if (d < 0.5) { dx = 0.6; dy = 0.8; d = 1; } bx = best[0] + dx / d * R; by = best[1] + dy / d * R; bNudge = true; } }
+        ALL.forEach(p => { if (p.off || p.gone || (bdo && p.dr && !p.dr.who && p.dr.m === p && /caneta|meialua/.test(p.dr.kind) && p.dr.t < 1)) return; const o = p === ball.owner && bdo ? drOff(p.dr) : null, px = X(p.x + (o ? o[0] : 0)), py = Y(p.y + (o ? o[1] : 0)), d2 = (bx - px) * (bx - px) + (by - py) * (by - py); if (d2 < bd2) { bd2 = d2; best = [px, py, p]; } });
+        // Bola calma no pé (20/11, Silvio: "a bola tá se mexendo muito e muito rapidamente nos pés"): no cérebro a bola de quem conduz fica a ~0,7 m
+        // dele e troca de lado a cada toque (3,7 rad/s, um pulo de meia volta por segundo); na borda do disco isso virava a bola rodando em volta
+        // do boneco. Agora o lado anda devagar até o alvo (frente da corrida quando ele corre, senão o lado da bola), só desenho; no drible segue a finta
+        if (best) { const nw = performance.now(), dt = Math.min(0.1, Math.max(0, (nw - bNT) / 1000)), p0 = best[2]; let dx = bx - best[0], dy = by - best[1], d = Math.hypot(dx, dy); if (d < 0.5) { dx = 0.6; dy = 0.8; d = 1; }
+          let ta = Math.atan2(dy, dx); const mv = bNP === p0 && dt > 0 ? Math.hypot(best[0] - bNX, best[1] - bNY) / dt : 0;
+          if (p0 === ball.owner && mv > 6 * k && !bdo) ta = Math.atan2(best[1] - bNY, best[0] - bNX);
+          if (bNP !== p0 || bdo || dt === 0 || p0 !== ball.owner || ball.fly) bNA = ta; else { let da = ta - bNA; da = Math.atan2(Math.sin(da), Math.cos(da)); bNA += Math.sign(da) * Math.min(Math.abs(da) * (1 - Math.exp(-dt / 0.16)), 4.5 * dt); }
+          bNP = p0; bNX = best[0]; bNY = best[1]; bNT = nw;
+          bx = best[0] + Math.cos(bNA) * R; by = best[1] + Math.sin(bNA) * R; bNudge = true; } else bNP = null; }
       // Rastro do chute: uma cauda curta atrás da bola, mais grossa e clara perto dela (dá a força do chute; some quando a bola para)
       if ((ball.fly && ball.fly.shot && !(ball.fly.pre > 0)) || (B11 && ball.b11shot && mode === 'play')) { bt.push([bx, by - air]); if (bt.length > 8) bt.shift(); } else if (bt.length) bt.splice(0, 2);
       if (bt.length > 1) { g.lineCap = 'round'; for (let i = 1; i < bt.length; i++) { const a = i / bt.length; g.strokeStyle = 'rgba(255,238,180,' + (0.62 * a).toFixed(2) + ')'; g.lineWidth = (1 + 5 * a) * k; g.beginPath(); g.moveTo(bt[i - 1][0], bt[i - 1][1]); g.lineTo(bt[i][0], bt[i][1]); g.stroke(); } g.lineCap = 'butt'; }
@@ -2438,8 +2446,8 @@
         if (ow) { const oo = bdo ? drOff(ow.dr) : null; g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6 * k; g.beginPath(); g.arc(X(ow.x + (oo ? oo[0] : 0)), Y(ow.y + (oo ? oo[1] : 0)), 13.2 * k, 0, Math.PI * 2); g.stroke(); } // o anel acompanha o corpo (na meia-lua a bola vai por outro lado)
         if (!bNudge) { g.fillStyle = 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(bx, by - air, (9.5 + air / 12) * k, 0, Math.PI * 2); g.fill(); }
         { const br = (5.7 + air / 12) * k, cx = bx, cy = by - air; // a bola gira pelo caminho que faz na tela (rola de verdade), com o desenho da competição
-          if (bPrev) { const dx = cx - bPrev[0], dy = cy - bPrev[1], d = Math.hypot(dx, dy); if (d > 0.05 && d < 60 * k) { bM = BALLP.mul(BALLP.rot([-dy / d, dx / d, 0], Math.min(0.45, d / br)), bM); bDirty = true; } }
-          bPrev = [cx, cy];
+          if (bPrev) { const dx = cx - bPrev[0], dy = cy - bPrev[1], d = Math.hypot(dx, dy); if (d > 0.05 && d < 60 * k) { bM = BALLP.mul(BALLP.rot([-dy / d, dx / d, 0], Math.min(0.25, d / br / 1.6)), bM); bDirty = true; } }
+          bPrev = [cx, cy]; bDraw = [cx, cy, bNudge];
           const sz = Math.min(44, Math.max(8, Math.ceil(2 * br * dpr) + 2)); if (!bSpr) bSpr = document.createElement('canvas');
           if (bDirty || sz !== bSz) { BALLP.paint(bSpr, sz, bM, BK); bSz = sz; bDirty = false; }
           const dw = sz * br / (sz / 2 - 0.5); g.drawImage(bSpr, cx - dw / 2, cy - dw / 2, dw, dw);
@@ -2625,7 +2633,7 @@
       _refs: () => ({ REF, AR, REFC }), _place: (fn) => { fn({ T, ball, REF, AR, ALL }); },
       _fk(side, x, y) { const q = T[side].filter(p => p.r !== 'GK').sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; mode = 'falta'; whistle('Falta', q, { x, y }); return fkSet; }, // teste: falta do lado side no ponto (x, y) do campo
       diag: () => ({ mxT: Math.round(mxT * 10) / 10, stall: stallN, catchN: CATCH, fps: Math.round(fpsN / Math.max(1, (Date.now() - born) / 1000)), W: Math.round(W), H: Math.round(H) }),
-      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, slowDebt, mT, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
+      _step: step, _state: () => { const lw = lastWhy; lastWhy = ''; return ({ lastWhy: lw, bDraw, oscr: g && ball.owner ? [X(ball.owner.x), Y(ball.owner.y)] : null, slowDebt, mT, CHEG, POCK, ALLX: ALL, WHY, DBG, PLAYS, DRIB, DISPN, CATCH, FKN, BUN, scr: g ? [X(ball.x), Y(ball.y)] : null, trail, REF, AR, Q4, leaving, rs, mode, poss, ball, due, att, goals, lc, offPend, foulPend, refFx, wrong: ALL.filter(p => tf(p.side, p)[0] > 53.5).length }); }
     };
     LP._sim = api;
     return api;
