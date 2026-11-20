@@ -1771,6 +1771,15 @@
     R.dep = x => d[lf[x]] * k + roof(x); R.W = W; R.H = H; U.EST.live(pn);
     return R;
   }
+  // Enquadra o desenho pelo que ele ocupa de verdade (bares, refletores e telão incluídos): centraliza na área livre à direita
+  // de x0 e encolhe se precisar, para nada sair do painel em nenhum setor ou nível
+  function estCenter(pn, x0, m) {
+    const sv = pn.querySelector('.est-svg'); if (!sv || !sv.getBBox) return;
+    let b; try { b = sv.getBBox(); } catch (er) { return; }
+    const W = pn.clientWidth, H = pn.clientHeight, aw = W - x0 - m, ah = H - 2 * m; if (!b.width || !b.height || aw <= 0 || ah <= 0) return;
+    const s = Math.min(1, aw / b.width, ah / b.height), vx = b.x + b.width / 2 - (x0 + aw / 2) / s, vy = b.y + b.height / 2 - (m + ah / 2) / s;
+    sv.setAttribute('viewBox', vx.toFixed(1) + ' ' + vy.toFixed(1) + ' ' + (W / s).toFixed(1) + ' ' + (H / s).toFixed(1));
+  }
   function estadio() {
     const c = C(), co = c.co, cl = club(co.club), e = S.coEst(co), E = S.CO_EST, ob = e.obra, cap = ob ? S.coEstOpen(e) : S.coEstCap(e), hi = S.coEstHumIdx(e.hum), cls = estCls(e);
     const BK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
@@ -2004,9 +2013,10 @@
           : r.why === 'folga' ? (x > 1 ? 'Com a entrada e as parcelas pela frente sobraria pouca folga no caixa.' : 'Depois da obra sobraria menos de ' + E.obra.folga + ' semanas de salário no caixa.') + ' Ele libera com ' + c.brl(Math.ceil(r.need / 10000) * 10000) + '.' : 'A diretoria não liberou a obra agora.';
         obraBox({ img, sm, cls: 'dn', w: 'Recusou a obra', line, rows: [['Custo da obra', c.brl(M.cost)], ['Caixa agora', c.brl(S.coFin(co).caixa), r.why === 'ultimato' ? '' : 'dn']], b1: 'Entendi', b2: 'Finanças', on2: () => { FIN_BACK = () => ampliar(k, mode, x); financas(); } });
       };
-      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { prev: k, wPad: 190, hPad: 34, dx: 62 });
+      const pn = st.querySelector('#es-pn'), R = estDraw(pn, e, cl, { prev: k, wPad: 190, hPad: 34 });
       if (!R) return;
-      pn.innerHTML = R.svg + '<div class="es-co" style="width:' + Math.max(96, Math.round(R.px - R.gap - R.dep('n') - 14)) + 'px"><b>+' + milK(P.add) + '</b><small>lugares</small><b class="s">+' + c.brl(P.perGame) + '</b><small>por jogo cheio</small></div>';
+      pn.innerHTML = R.svg + '<div class="es-co"><b>+' + milK(P.add) + '</b><small>lugares</small><b class="s">+' + c.brl(P.perGame) + '</b><small>por jogo cheio</small></div>';
+      estCenter(pn, pn.querySelector('.es-co').offsetWidth + 34, 14);
     });
   }
   // ---------- Mercado, lote 1 (2026-11-09, quadros 23, 23b e 24): só olhar; propostas no lote 2 ----------
