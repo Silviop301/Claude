@@ -11104,9 +11104,11 @@ button.coin-pill .cp-plus::before { width: 10px; height: 2.5px; } button.coin-pi
 .lde2-sg .lde2-cd { width: 10px; height: 14px; }
 .lde2-l5 { margin-top: auto; display: flex; flex-direction: column; gap: 4px; }
 .lde2-l5 small { font: 700 12px/1 var(--body); letter-spacing: .08em; color: #4b5a52; }
-.lde2-l5 > span { height: 46px; display: flex; align-items: flex-end; gap: 6px; }
-.lde2-l5 i { flex: 1; border-radius: 6px 6px 3px 3px; position: relative; display: flex; justify-content: center; }
+.lde2-l5 > span { height: 40px; display: flex; align-items: flex-end; gap: 6px; }
+.lde2-l5 i { flex: 1; min-height: 20px; border-radius: 6px 6px 3px 3px; position: relative; display: flex; justify-content: center; }
 .lde2-l5 i.n3 { background: #2f8a57; } .lde2-l5 i.n2 { background: #c9a227; } .lde2-l5 i.n1 { background: #d9774a; }
-.lde2-l5 i b { position: absolute; top: 4px; font: 800 13px/1 var(--display); color: #fff; }
+.lde2-l5 i b { position: absolute; top: 3px; font: 800 13px/1 var(--display); color: #fff; }
 .lde2-nj { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
 .lde2-nj b { font: 800 22px/1 var(--display); } .lde2-nj small { font: 700 14px/1 var(--body); color: #4b5a52; }
+.lde2-c.sv { overflow: hidden; }
+.lde2-c.sv .lde2-ch span small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-bottom: .16em; margin-bottom: -.16em; }

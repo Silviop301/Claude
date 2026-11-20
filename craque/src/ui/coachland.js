@@ -3006,15 +3006,32 @@
   function seasonStats(co) {
     const ss = co.ss || {}, L = [].concat(ss.log || [], (ss.cup && ss.cup.log) || [], (ss.cont && ss.cont.log) || []).map((l, i) => [l, i]);
     L.sort((x, y) => (x[0].r | 0) - (y[0].r | 0) || x[1] - y[1]);
-    const R = {}, byN = {}, gk = {};
+    const R = {}, byN = {}, gk = {}, byId = {}; co.squad.forEach(p => { byId[p.id] = p; });
     co.squad.forEach(p => { R[p.id] = { j: 0, t: 0, g: 0, a: 0, y: 0, r: 0, mom: 0, cs: 0, nt: [], avg: 0 }; if (!(p.n in byN)) byN[p.n] = p.id; gk[p.id] = p.pos === 'GOL'; });
     const add = (arr, k) => (arr || []).forEach(n => { const id = byN[n]; if (id !== undefined) R[id][k]++; });
     L.forEach(([l]) => {
       (l.rt || []).forEach((e, i) => { const x = R[e.id]; if (!x) return; x.j++; if (!e.sub) x.t++; x.nt.push(e.r); if (i === 0) x.mom++; if (gk[e.id] && l.ga === 0 && (e.min || 0) >= 60) x.cs++; });
-      add(l.ev, 'g'); add(l.as, 'a'); add(l.yc, 'y'); add(l.rc, 'r');
+      add(l.ev, 'g'); add(l.as || oldAst(l, byId), 'a'); add(l.yc, 'y'); add(l.rc, 'r');
     });
     Object.keys(R).forEach(k => { const x = R[k]; x.avg = x.nt.length ? x.nt.reduce((a, v) => a + v, 0) / x.nt.length : 0; });
     return R;
+  }
+  // Jogo de antes de 20/11 (sem log.as): o passador sai pela mesma conta do motor (76% dos gols com assistência, peso pela
+  // posição e pelo Passe), entre quem jogou aquele jogo, presa ao jogo e ao gol (sempre o mesmo número)
+  const AST_W = { GOL: 0.05, ZAG: 0.35, LAT: 1.3, MEI: 2.6, ATA: 1.8 };
+  function oldAst(l, byId) {
+    const pl = (l.rt || []).map(e => byId[e.id]).filter(Boolean), out = [];
+    (l.ev || []).forEach((n, i) => {
+      let h = 2166136261; const k = 'oa|' + l.vs + '|' + l.r + '|' + (l.cup ? 'c' + (l.k | 0) + (l.cont ? 'x' : '') : '') + '|' + i + '|' + n;
+      for (let j = 0; j < k.length; j++) { h ^= k.charCodeAt(j); h = Math.imul(h, 16777619); }
+      const u = (h >>> 0) / 4294967296; if (u >= 0.76) return;
+      const on = pl.filter(p => p.n !== n); if (!on.length) return;
+      const w = on.map(p => (AST_W[p.pos] || 1) * Math.max(0.3, 1 + (Array.isArray(p.at) && p.pos !== 'GOL' ? (p.at[1] - 60) / 40 : 0)));
+      let x = (u / 0.76) * w.reduce((t, v) => t + v, 0);
+      for (let j = 0; j < on.length; j++) { x -= w[j]; if (x <= 0) { out.push(on[j].n); return; } }
+      out.push(on[on.length - 1].n);
+    });
+    return out;
   }
   const ntCl = v => !v ? 'n0' : v >= 7 ? 'n3' : v >= 6 ? 'n2' : 'n1';
   const ntTx = v => v ? v.toFixed(1).replace('.', ',') : '–';
