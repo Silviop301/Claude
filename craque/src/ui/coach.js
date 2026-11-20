@@ -902,7 +902,7 @@
       $('lv-sheet').innerHTML = '<div class="lv-sh"><i class="lv-grab"></i><div class="lv-st-h"><small>' + S.coClock(m) + ' · Fim de jogo</small><b>' + m.gh + ' x ' + m.ga + '</b></div>' +
         '<h2>' + (ourGoals() > theirGoals() ? 'Vitória' : ourGoals() < theirGoals() ? 'Derrota' : pk ? 'Empate · vai para os pênaltis' : 'Empate') + '</h2><button class="btn" id="b-lv-end">' + (pk ? 'Disputa de pênaltis' : 'Ver o resultado') + '</button></div>';
       $('lv-sheet').classList.add('on');
-      $('b-lv-end').onclick = () => { sfx('tap'); if (pk) return U.LD.livePens(m, finish); finish(); };
+      $('b-lv-end').onclick = () => { sfx('tap'); if (pk) return U.LD.livePens(m, finish, sim); finish(); };
     };
     // Os lances novos do motor vão para o campinho. Chance: a linha da narração sai quando a bola chega (ou em 9 s).
     // Gol: o relógio espera a rede balançar (o campinho força a jogada aos 9 s de bola rolando; a tela desiste só aos 30 s) e só então o placar vira. Volta a espera do gol, ou null
@@ -969,7 +969,7 @@
       if (gw) { wait = go; return gw(go); }
       go();
     };
-    const toEnd = () => { clearTimeout(timer); wait = null; if (sim) sim.stop(); sim = null; hidden.clear(); while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } read = null; end(); };
+    const toEnd = () => { clearTimeout(timer); wait = null; if (sim && m.cup && !m.cup.grp && LDon) sim.freeze(true); else { if (sim) sim.stop(); sim = null; } /* mata-mata da copa: o campinho fica para a disputa de pênaltis animada */ hidden.clear(); while (!m.done) { S.coMatchStep(co, m); S.coAutoStop(co, m); } read = null; end(); };
     // O cartão da parada
     // Parada do vermelho: o auxiliar sugere fechar o time (a formação mais segura com 10), manter, ou tirar quem tem amarelo
     const CLOSE = { '4-4-2': '4-5-1', '4-3-3': '4-5-1', '4-2-3-1': '4-5-1', '4-5-1': '5-3-2', '3-5-2': '5-3-2', '3-4-3': '3-5-2', '5-3-2': '5-3-2' };

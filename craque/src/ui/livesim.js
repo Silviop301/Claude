@@ -1083,6 +1083,97 @@
       // depois da batida, quem estava na entrada da área entra para o rebote
       T[s].filter(q => q !== tk && q.r !== 'GK' && tf(s, q)[0] > 80).sort((a, b) => Math.abs(tf(s, a)[1] - 34) - Math.abs(tf(s, b)[1] - 34)).slice(0, 2).forEach(q => { q.run = 1.2; q.runX = 94 + rnd() * 2; q.runY = 34 + gauss() * 5; }); // dois entram para o rebote
     }
+    // Disputa de pênaltis da copa (Silvio, 20/11: "quero ver a cobrança dos jogadores"): só desenho, o motor já decidiu cada
+    // cobrança (S.coCupPens). Todos vão para o meio-campo em duas filas por time, a disputa é no gol da direita da tela, o
+    // goleiro de quem bate espera na linha de fundo fora da área e o batedor sai da fila, caminha até a marca, corre e bate:
+    // gol (rede), defesa (segura ou espalma), fora ou trave. O próximo já sai da fila durante a cobrança e espera fora da área.
+    // seq = [{ s: 0 seu | 1, num, ok }]; onEach(i) no instante do resultado; onEnd() ao terminar a festa de quem passou
+    let pk = null; const PK_WALK = 6.8, PK_RUN = 5.8;
+    function pkWho(s, num) { return T[s].find(q => q.num === num) || T[s].filter(q => q.r !== 'GK').sort((a, b) => b.d - a.d)[0] || T[s][0]; }
+    function pkInit(seq, onEach, onEnd) {
+      rpEnd(); if (lc) lcDone(); frozen = false; mode = 'pks'; stopWhy = ''; due = null; pen = null; penBan = null; camT = 0; fkSet = null;
+      ball.owner = ball.fly = ball.loose = ball.carry = null; ball.z = 0;
+      const gx = mir() ? 0 : L, dg = gx ? 1 : -1, home = new Map();
+      // fila no meio-campo: cada time numa metade, duas fileiras desencontradas (abraçados, como na TV)
+      [0, 1].forEach(s => T[s].filter((p, k) => k > 0 && !(p.outT > 20) && !p.subW).forEach((p, i) => {
+        const row = i % 2, col = i >> 1, y = 28 + (s ? 1 : -1) * (1.8 + col * 3 + row * 1.5); // um pouco acima do meio: o cartão de quem bate fica embaixo à esquerda
+        home.set(p, [52.5 + dg * (row ? -2.2 : 1), y]); p.down = 0; p.dva = null; }));
+      pk = { seq, i: 0, onEach, onEnd, gx, dg, spot: { x: gx - dg * 11, y: 34 }, home, cur: null, nx: null, end: -1, t: 0 };
+      ball.x = pk.spot.x; ball.y = 34;
+      // corte de câmera, como na TV: todos já na fila e os goleiros nos seus lugares (o goleiro do outro gol levaria 20 s)
+      pkGkSpots(seq[0] ? seq[0].s : 0);
+      ALL.forEach(p => { const h = home.get(p) || p.pkT; if (h) { p.x = p.tx = h[0]; p.y = p.ty = h[1]; p.vx = p.vy = 0; } });
+    }
+    function pkGkSpots(s) { // s = quem bate: o goleiro dele espera na linha de fundo, fora da área; o outro vai para o gol
+      const P = pk; T[1 - s][0].pkT = [P.gx - P.dg * 0.4, 34]; if (T[s][0] && !(P.cur && P.cur.tk === T[s][0])) T[s][0].pkT = [P.gx - P.dg * 0.6, 34 + 21.6]; }
+    function pkNext() {
+      const P = pk, e = P.seq[P.i]; if (!e) { P.cur = null; return; }
+      const tk = pkWho(e.s, e.num); P.cur = { e, s: e.s, tk, gk: T[1 - e.s][0], ph: 0, t: 0 }; P.nx = null; tk.pkV = PK_WALK;
+      if (tk.r === 'GK') { /* goleiro batendo: o goleiro de cada lado segue o seu papel */ }
+      ball.x = P.spot.x; ball.y = 34; ball.z = 0;
+    }
+    function pksStep(dt) {
+      const P = pk; if (!P) return; P.t += dt; const { gx, dg, spot } = P;
+      // todos na fila (quem não é o batedor nem o próximo); goleiros nos seus lugares
+      ALL.forEach(p => { const h = P.home.get(p); if (h && !(P.cur && P.cur.tk === p) && !(P.nx && P.nx.tk === p)) { p.tx = h[0]; p.ty = h[1]; p.sprint = 0; if (Math.hypot(p.x - h[0], p.y - h[1]) < 0.6) p.pkV = 0; } });
+      if (P.end >= 0) { // fim: quem passou corre para o goleiro e faz o bolo; quem perdeu fica na fila e uns sentam
+        P.t2 = (P.t2 || 0) + dt; const w = P.end, g0 = T[w][0], cx = gx - dg * 14, cy = 34;
+        T[w].forEach((p, k) => { const a = k / Math.max(1, T[w].length) * Math.PI * 2, rr = k ? 2.6 + (k % 2) * 1.6 : 0; p.tx = cx + Math.cos(a) * rr; p.ty = cy + Math.sin(a) * rr * 0.8; p.sprint = 1; p.pkV = 0; p.down = 0; });
+        T[1 - w].forEach((p, k) => { if (!k) { p.tx = gx - dg * 2; p.ty = 34; } if (k % 3 === 1 && P.t2 > 1 + k * 0.2) { p.down = 9; p.tx = p.x; p.ty = p.y; } });
+        if (g0) g0.ty = cy;
+        if (!P.fin && P.t2 > 3.2) { P.fin = 1; if (P.onEnd) P.onEnd(); }
+        return;
+      }
+      if (!P.cur) { if (P.t > 0.8 && P.i < P.seq.length) pkNext(); else if (P.i >= P.seq.length) return; else { pkGkSpots(P.seq[0].s); [T[0][0], T[1][0]].forEach(p => { if (p && p.pkT) { p.tx = p.pkT[0]; p.ty = p.pkT[1]; } }); return; } }
+      const C = P.cur, { s, tk, gk } = C; C.t += dt;
+      pkGkSpots(s); [T[0][0], T[1][0]].forEach(p => { if (p && p.pkT && p !== tk && !(C.ph >= 3 && p === gk)) { p.tx = p.pkT[0]; p.ty = p.pkT[1]; p.sprint = 0; p.pkV = 6; } });
+      const back = [spot.x - dg * 2.8, 34 - 1.3];
+      if (C.ph === 0) { tk.tx = back[0]; tk.ty = back[1]; tk.sprint = 0; tk.pkV = PK_WALK; // caminha até a marca
+        if ((Math.hypot(tk.x - back[0], tk.y - back[1]) < 0.7 && Math.hypot(gk.x - (gx - dg * 0.4), gk.y - 34) < 1.5) || C.t > 10) { C.ph = 1; C.t = 0; } }
+      else if (C.ph === 1) { tk.tx = tk.x; tk.ty = tk.y; // parado, olha o goleiro; o juiz apita
+        if (C.t > 0.55) { C.ph = 2; C.t = 0; if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('whistle'); } catch (_) {}
+          // o próximo já sai da fila e espera fora da área
+          const e2 = P.seq[P.i + 1]; if (e2) { const t2 = pkWho(e2.s, e2.num); if (t2 !== tk) P.nx = { tk: t2 }; } } }
+      else if (C.ph === 2) { if (C.t > 0.35) { tk.tx = spot.x - dg * 0.6; tk.ty = spot.y + 0.2; tk.pkV = PK_RUN; } else { tk.tx = tk.x; tk.ty = tk.y; }
+        if ((C.t > 0.35 && Math.hypot(tk.x - spot.x, tk.y - spot.y) < 1.15) || C.t > 2.6) pkKick(C); }
+      else if (C.ph === 3) { // a bola voa e o goleiro mergulha
+        const f = C.f; f.t += dt / f.dur; const u = Math.min(1, f.t), e = u * (1 + SHOT_DRAG) - u * u * SHOT_DRAG;
+        ball.x = f.x0 + (f.x1 - f.x0) * e; ball.y = f.y0 + (f.y1 - f.y0) * e; ball.z = Math.sin(u * Math.PI * 0.5) * f.h;
+        if (f.dive != null && u > 0.18) { const v = Math.min(1, (u - 0.18) / 0.7), e2 = v * (2 - v); gk.x = f.g0.x + (f.gkx - f.g0.x) * e2; gk.y = f.g0.y + (f.dive - f.g0.y) * e2; gk.tx = gk.x; gk.ty = gk.y; gk.vx = gk.vy = 0;
+          if (!gk.down) { gk.dva = Math.sign(f.dive - f.g0.y) || 1; gk.down = 0.01; } gk.down = Math.max(gk.down, 1.4); gk.stun = Math.max(gk.stun, 1.4); }
+        else if (f.dive == null) { gk.tx = gk.x; gk.ty = gk.y; }
+        if (u >= 1) pkRes(C); }
+      else if (C.ph === 4) { // depois do lance: a bola segue (rede, rebote ou para fora), o batedor volta para a fila
+        const r = C.r; if (r) { r.t += dt; const u = Math.min(1, r.t / r.d), e = u * (2 - u); ball.x = r.x0 + (r.x1 - r.x0) * e; ball.y = r.y0 + (r.y1 - r.y0) * e; ball.z = r.h ? Math.sin(u * Math.PI) * r.h : 0; }
+        if (C.r && C.r.hold) { ball.x = gk.x - dg * 0.5; ball.y = gk.y; ball.z = 0; }
+        if (C.t > 0.9) { tk.pkV = PK_WALK; const h = P.home.get(tk); if (h) { tk.tx = h[0]; tk.ty = h[1]; } else if (tk.r === 'GK') tk.pkT = null; }
+        if (C.t > 1.9) { P.i++; P.cur = null; P.t = 1.2; if (gk.down) gk.down = Math.min(gk.down, 0.2); if (P.i >= P.seq.length) { P.end = P.win; P.t2 = 0; } } }
+      if (P.nx) { const n = P.nx.tk, wp = [gx - dg * 23.5, 34 - 5 + (n.side ? 1 : -1) * 0.8]; n.tx = wp[0]; n.ty = wp[1]; n.sprint = 0; n.pkV = PK_WALK - 0.6; }
+    }
+    function pkKick(C) {
+      const P = pk, { e, tk, gk } = C, { gx, dg, spot } = P, side = rnd() < 0.5 ? -1 : 1;
+      const out = e.ok ? 'gol' : rnd() < 0.62 ? 'def' : rnd() < 0.72 ? 'fora' : 'trave';
+      let ty, tx = gx - dg * 0.3, dive = 34 + (rnd() < 0.5 ? -1 : 1) * 2.8, h = 0.4 + rnd() * 0.8;
+      if (out === 'gol') { ty = 34 + side * (2 + rnd() * 3.2); dive = rnd() < 0.15 ? null : rnd() < 0.25 ? ty - side * 1.6 : 34 - side * (1.8 + rnd() * 1.4); if (rnd() < 0.12) { ty = 34 + side * 0.4; dive = 34 + side * 2.6; h = 1.4; } } // canto errado, quase pega, ou cavadinha no meio
+      else if (out === 'def') { ty = 34 + side * (1.4 + rnd() * 2.2); dive = ty; tx = gx - dg * 0.9; }
+      else if (out === 'trave') { ty = side > 0 ? GR : GL; dive = 34 - side * 2.2; }
+      else { ty = 34 + side * (4.6 + rnd() * 2); h = rnd() < 0.5 ? 3.5 + rnd() * 2 : 0.5; }
+      if (dive != null && Math.abs(dive - 34) < 0.3) dive = null;
+      ball.x = spot.x; ball.y = spot.y; const d = Math.hypot(tx - ball.x, ty - ball.y);
+      C.f = { x0: ball.x, y0: ball.y, x1: tx, y1: ty, t: 0, dur: Math.max(0.32, d / 23), h, dive: dive == null ? null : cl(dive, GL - 0.8, GR + 0.8), g0: { x: gk.x, y: gk.y }, gkx: out === 'def' ? tx : gk.x };
+      C.out = out; C.ph = 3; C.t = 0; tk.tx = tk.x + dg * 0.6; tk.ty = tk.y; tk.pkV = 2;
+      tk.kk = { t: 0, pre: 0, pw: 1, ux: (tx - ball.x) / (d || 1), uy: (ty - ball.y) / (d || 1) };
+      if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play('kick'); } catch (_) {}
+    }
+    function pkRes(C) {
+      const P = pk, { gx, dg } = P, out = C.out, sv = rnd() < 0.5; C.ph = 4; C.t = 0;
+      const sfx = k => { if (typeof window !== 'undefined' && window.CRAQUE_SFX && !o.mute) try { window.CRAQUE_SFX.play(k); } catch (_) {} };
+      if (out === 'gol') { net = { gx, y: ball.y, t: 0, v: 22 }; C.r = { x0: ball.x, y0: ball.y, x1: gx + dg * 1.2, y1: cl(ball.y, GL + 0.4, GR - 0.4), t: 0, d: 0.25 }; bigSay('GOL!', C.s, 1.5, true); }
+      else if (out === 'def') { C.r = sv ? { hold: 1 } : { x0: ball.x, y0: ball.y, x1: gx - dg * (6 + rnd() * 5), y1: ball.y + (ball.y < 34 ? -1 : 1) * (3 + rnd() * 6), t: 0, d: 0.7, h: 0.8 }; bigSay('DEFENDEU!', 1 - C.s, 1.5, true); }
+      else if (out === 'trave') { post = { x: ball.x, y: ball.y, t: 0.5 }; sfx('trave'); C.r = { x0: ball.x, y0: ball.y, x1: gx - dg * (5 + rnd() * 5), y1: 34 + (ball.y < 34 ? -1 : 1) * (2 + rnd() * 6), t: 0, d: 0.8 }; bigSay('NA TRAVE!', 1 - C.s, 1.5, true); }
+      else { C.r = { x0: ball.x, y0: ball.y, x1: gx + dg * 5, y1: ball.y + (ball.y - 34) * 0.4, t: 0, d: 0.5, h: C.f.h > 2 ? 1.5 : 0 }; bigSay('PARA FORA!', 1 - C.s, 1.5, true); }
+      if (P.onEach) P.onEach(P.i);
+    }
     // Falta direta (bola parada, fase 3): o motor decidiu a chance de falta; ela sai de 21 a 29 m, pelo lado de onde veio
     // (l: e, d ou centro). Barreira de 4 no meio, 3 meio de lado, 2 de lado, a 9,15 m e cobrindo a trave mais perto; o juiz
     // marca o spray; o goleiro fica do outro lado; um atacante cola na ponta da barreira, outro passa por cima da bola
@@ -1754,6 +1845,7 @@
       else if (mode === 'play') { if (B11) playB(dt); else play(dt); }
       else if (mode === 'troca') subStep(dt);
       else if (mode === 'pen') { if (pen) penStep(dt); else mode = 'play'; }
+      else if (mode === 'pks') pksStep(dt);
       else if (mode === 'half') { ALL.forEach(p => { [p.tx, p.ty] = tunnel(p); p.outT = 30; p.outE = 40; }); }
       else if (mode === 'ko') {
         ALL.forEach(p => { [p.tx, p.ty] = koShape(p, p.side); });
@@ -1846,7 +1938,7 @@
         const calm = mode === 'play' && !p.sprint && !p.drib && p.stun <= 0;
         // perto da bola, o companheiro de quem tem a bola se mexe ligeiro para dar opção (o apoio não pode chegar atrasado)
         const supp = calm && SUPP > 0 && ball.owner && ball.owner.side === p.side && Math.hypot(p.x - ball.x, p.y - ball.y) < SUPP;
-        const top = (p.stun > 0 ? 2.2 : p.drib ? V_DRB : p.sprint ? V_SPR * (p.clK ? CLOSE_V : 1) : mode === 'play' ? (supp ? cl(2.6 + d * 0.6, 3, 6.6) : cl(CALM0 + d * CALMK, 1.8, V_CALM)) : back && d > 4 ? 8.6 : 5.6) * p.spd * (isMe(p) && en !== null && en < 30 ? 0.86 : 1);
+        const top = (p.stun > 0 ? 2.2 : p.drib ? V_DRB : p.sprint ? V_SPR * (p.clK ? CLOSE_V : 1) : mode === 'play' ? (supp ? cl(2.6 + d * 0.6, 3, 6.6) : cl(CALM0 + d * CALMK, 1.8, V_CALM)) : mode === 'pks' ? (p.pkV || 4.6) : back && d > 4 ? 8.6 : 5.6) * p.spd * (isMe(p) && en !== null && en < 30 ? 0.86 : 1);
         p.vt = p.vt === undefined ? top : p.vt + (top - p.vt) * Math.min(1, dt * VTK); // o ritmo muda aos poucos (o pique que liga e desliga não dá tranco)
         const want = d > (calm ? 0.6 : 0.05) ? Math.min(p.vt, d * (supp ? 1.6 : calm ? CALMG : 1.8)) : 0, wx = want ? dx / d * want : 0, wy = want ? dy / d * want : 0;
         const sp0 = Math.hypot(p.vx, p.vy), brk = want < sp0 - 0.3 || (sp0 > 1 && wx * p.vx + wy * p.vy < 0), acc = (p.drib ? ACC_D : brk ? ACC_B : p.sprint ? ACC_S : ACC_C) * dt;
@@ -2305,6 +2397,7 @@
     function camStep() {
       const now = performance.now(), dt = Math.min(0.1, (now - (cam.cl || now)) / 1000); cam.cl = now;
       if (RPL && W > 200) { const gx = rp.s ? 0 : L, k = Math.min(1, dt * 2.4); cam.z += (RP_Z - cam.z) * k; cam.x += (X(ball.x * 0.6 + gx * 0.4) - cam.x) * k; cam.y += (Y(ball.y * 0.75 + 34 * 0.25) - cam.y) * k; if (!cam.x) { cam.x = W / 2; cam.y = H / 2; } return; } // replay: zoom seguindo a bola, puxado para o gol
+      if (mode === 'pks' && pk && W > 200) { const k = Math.min(1, dt * 1.4); cam.z += (1.42 - cam.z) * k; cam.x += (X(pk.gx - pk.dg * 36) - cam.x) * k; cam.y += (Y(34) - cam.y) * k; if (!cam.x) { cam.x = W / 2; cam.y = H / 2; } return; } // disputa de pênaltis: do meio-campo ao gol
       const on = ((pen && !(pen.ban > 0)) || clk < camT) && W > 200, gs = camS, [fx, fy] = toW(gs, L - 13, 34), tz = on ? 1.65 : 1;
       const sz = !on && slowT > 0 && slowP && W > 200; // câmera lenta do chute: um zoom leve entre quem chuta e o gol (Silvio, 12/11)
       const k = Math.min(1, dt * (sz ? 5 : on ? 2.2 : 1.6)); cam.z += ((sz ? 1.28 : tz) - cam.z) * k;
@@ -2428,7 +2521,7 @@
       }
       const bdo = ball.owner && ball.owner.dr && ball.owner.dr.who ? drOff(ball.owner.dr, true) : null;
       const tk = toss ? (q => q * q * (3 - 2 * q))(Math.max(0, Math.min(1, (toss.t - toss.d) / TOSS_T))) : 1, tx0 = toss ? toss.x + (ball.x - toss.x) * tk - ball.x : 0, ty0 = toss ? toss.y + (ball.y - toss.y) * tk - ball.y : 0; // a reserva indo até o ponto da cobrança
-      let bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)); const air = bdo && bdo[2] ? bdo[2] * 1.3 * k : toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : B11 && ball.z ? ball.z * 1.3 * k * (ball.b11shot && ball.y > GL - 1 && ball.y < GR + 1 ? cl(Math.min(ball.x, L - ball.x) / 5, 0, 1) : 1) : 0;
+      let bx = X(ball.x + tx0 + (bdo ? bdo[0] : 0)), by = Y(ball.y + ty0 + (bdo ? bdo[1] : 0)); const air = bdo && bdo[2] ? bdo[2] * 1.3 * k : toss ? Math.sin(tk * Math.PI) * 6 * k : ball.fly ? Math.sin(Math.min(1, ball.fly.t) * Math.PI) * (ball.fly.loft || 0) * 1.3 * k : (B11 || mode === 'pks') && ball.z ? ball.z * 1.3 * k * (ball.b11shot && ball.y > GL - 1 && ball.y < GR + 1 ? cl(Math.min(ball.x, L - ball.x) / 5, 0, 1) : 1) : 0;
       // Bola fora do número (19/11, análise externa: "quando encosta no marcador do jogador, cobre parte do número"): bola baixa a menos
       // de BALL_OFF do centro de um boneco é desenhada na borda dele, do lado onde está (só desenho; a bola de verdade não muda)
       let bNudge = false;
@@ -2633,7 +2726,10 @@
       half() { rpEnd(); if (lc) lcDone(); mode = 'half'; koSide = 1; ball.owner = ball.fly = ball.loose = ball.carry = null; },
       second() { half2 = true; mode = 'ko'; modeT = 0.4; koSide = 1; koHold = true; back = 1; if (subQ) subApply(true); // voltam do túnel, correndo (como na volta depois do gol)
         ALL.forEach(p => { const i = Math.max(0, T[p.side].indexOf(p)); p.x = 52.5 + (p.side ? 1 : -1) * (1.2 + (i % 3) * 1.3); p.y = WD + 0.8 + Math.floor(i / 3) * 1.1; p.vx = p.vy = 0; p.outT = 4; p.outE = 40; }); REF.x = 52.5; REF.y = WD + 1; },
-      freeze(v) { frozen = !!v; },
+      freeze(v) { if (v && mode === 'pks') return; frozen = !!v; },
+      // Disputa de pênaltis animada (pkInit); pksSkip(lado que passou) pula direto para a festa
+      pks(seq, onEach, onEnd, win) { pkInit(seq, onEach, onEnd); pk.win = win; },
+      pksSkip() { if (!pk || pk.end >= 0) return; pk.cur = pk.nx = null; pk.i = pk.seq.length; pk.end = pk.win; pk.t2 = 0; ball.z = 0; ball.x = pk.spot.x; ball.y = 34; ALL.forEach(p => { if (p.down) p.down = 0; }); },
       energy(v) { en = v === null || v === undefined ? null : cl(v, 0, 100); },
       meAt() { if (ME < 0) return null; const p = T[0][ME]; return [p.x / L * 100, p.y / WD * 100]; },
       ballAt() { return [ball.x / L * 100, ball.y / WD * 100]; },
