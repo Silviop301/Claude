@@ -2263,6 +2263,14 @@
         else if (REF.sig === 'alto') { g.moveTo(x, y); g.lineTo(x, y - 13 * k); }
         g.stroke(); g.lineCap = 'butt'; }
     }
+    // Gramado do seu estádio no jogo em casa (o.turf = {g nível 0 a 5, seed, pad}, Silvio 20/11): terra/gasto (0 e 1) e o corte do nível 5
+    // por cima do listrado do CSS; 2 a 4 é o gramado de sempre. Só desenho, pintado uma vez na tela guardada
+    let turfI = null;
+    if (o.turf && (o.turf.g <= 1 || o.turf.g >= 5) && typeof Image !== 'undefined' && window.CRAQUE_UI && CRAQUE_UI.EST && CRAQUE_UI.EST.turf) {
+      const im = new Image(); im.onload = () => { turfI = im; bgC = null; };
+      im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(CRAQUE_UI.EST.turf(1244, 732, o.turf.g, o.turf.seed, o.turf.pad));
+    }
+    const turfDraw = () => { if (!turfI) return; g.globalAlpha = o.turf.g >= 5 ? 0.55 : 0.85; g.drawImage(turfI, 0, OY, W, FH); g.globalAlpha = 1; };   // um pouco apagado: fica no tom do campinho
     let vig = null, bgC = null, SPR = typeof document !== 'undefined' && window.Map ? new Map() : null, cam = { z: 1, x: 0, y: 0, cl: 0 };
     // Câmera da bola parada: chega perto da área do pênalti e volta depois do lance (o resto do tempo, o campo todo)
     // Aviso do pênalti: a faixa PÊNALTI entra no meio da tela com um apito que treme e solta ondas; some sozinha (tempo de tela)
@@ -2310,7 +2318,7 @@
       if (cam.z > 1.003) { // com zoom: o gramado listrado (o do CSS não aproxima) desenhado junto, no mesmo lugar das listras
         const z = cam.z, hw = W / 2 / z, hh = H / 2 / z, cx = cl(cam.x, hw, W - hw), cy = cl(cam.y, hh, H - hh);
         g.setTransform(dpr * z, 0, 0, dpr * z, dpr * (W / 2 - cx * z), dpr * (H / 2 - cy * z));
-        for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#196340' : '#1B6B44'; g.fillRect(i * W / 10, 0, W / 10 + 0.5, H); }
+        for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#196340' : '#1B6B44'; g.fillRect(i * W / 10, 0, W / 10 + 0.5, H); } turfDraw();
       }
       // Luz de estádio: o meio do gramado mais claro e os cantos mais escuros (o gramado listrado vem do CSS)
       if (!vig || vig.w !== W || vig.h !== H) { vig = g.createRadialGradient(W / 2, H / 2, H * 0.25, W / 2, H / 2, Math.hypot(W, H) * 0.56); vig.addColorStop(0, 'rgba(255,255,240,.05)'); vig.addColorStop(1, 'rgba(0,0,0,.26)'); vig.w = W; vig.h = H; }
@@ -2322,7 +2330,7 @@
         const ng = !!net, c0 = bgC && bgC[+ng];
         if (!c0 || c0.w !== W || c0.h !== H || c0.d !== dpr || c0.width !== cv.width || c0.height !== cv.height) {
           bgC = bgC || []; const c = bgC[+ng] = c0 || document.createElement('canvas'); c.width = cv.width; c.height = cv.height; c.w = W; c.h = H; c.d = dpr;
-          const g0 = g; g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); g.fillStyle = vig; g.fillRect(0, 0, W, H); lines(ng); g = g0;
+          const g0 = g; g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); turfDraw(); g.fillStyle = vig; g.fillRect(0, 0, W, H); lines(ng); g = g0;
         }
         g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(bgC[+ng], 0, 0); g.setTransform(dpr, 0, 0, dpr, 0, 0);
         if (ng) { goalDraw(0, false); goalDraw(1, false); } g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 2;
