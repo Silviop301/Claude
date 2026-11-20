@@ -1199,7 +1199,10 @@
         if (z.textContent !== txt) z.textContent = txt;
         if (z.className !== zc) z.className = zc;
       };
-      sim = LP.sim({ me: -1, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, ball: !m.cup ? 'liga' : m.cup.fin ? 'final' : m.cup.cont ? (co.ss.cont && co.ss.cont.tier === 2 ? 'cont2' : 'cont') : 'copa', flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
+      // gramado do seu estádio no jogo em casa (o mesmo desenho e a mesma semente do Estádio; show recente = um nível pior)
+      const turf = (() => { if (!m.home || m.neutral || !S.coEst) return null; const e = S.coEst(co), id = String(co.club); let h = 7; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 99991;
+        return { g: e.up ? Math.max(0, e.up.g - (e.gt > 0 ? 1 : 0)) : 1, seed: h + 1, pad: e.gp }; })();
+      sim = LP.sim({ me: -1, turf, t0: m.tk || m.min, half2: m.min > 45, clean: LDon, ball: !m.cup ? 'liga' : m.cup.fin ? 'final' : m.cup.cont ? (co.ss.cont && co.ss.cont.tier === 2 ? 'cont2' : 'cont') : 'copa', flip: !m.home, home: m.home ? 0 : 1, kits: KT, speed: () => (co.speed === '3' ? 3 : 1.25), spm: () => spMs(co.speed === '3' ? '3' : '1') / 1000, onFrame: zone,
         free: FREE, brain: BRAIN,
         onRef: r0 => { if (m.done) return; const e = S.coMatchRef(co, m, r0.side ? 'them' : 'us', r0.kind, r0); if (e) { sent.add(e); paint(); } },
         yc: (side, num) => { const s = side ? m.them : m.us, p = s.squad.find(q => q.num === num && s.xi.includes(q.id)); return p && s.bk && s.bk[p.id] ? 1 : 0; },

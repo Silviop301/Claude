@@ -97,7 +97,7 @@ window.CRAQUE_UI.EST = (function () {
 
   // Gramado por nível: 0 terra aparecendo, 1 verde gasto, 2 faixas, 3 faixas vivas, 4 faixas finas, 5 xadrez
   const GR = [['#5F7A3D', '#5A753A'], ['#2F7A44', '#2C7440'], ['#22834A', '#1C733F'], ['#24904F', '#1B7741'], ['#26994F', '#1A7A40'], ['#28A254', '#1A7C40']];
-  function pitch(px, py, pw, ph, gram, k, seed, pad) {
+  function pitch(px, py, pw, ph, gram, k, seed, pad, noLines) {
     let g = '<rect x="' + (px - 7 * k) + '" y="' + (py - 7 * k) + '" width="' + (pw + 14 * k) + '" height="' + (ph + 14 * k) + '" rx="5" fill="#16402B"/>';
     gram = Math.max(0, Math.min(5, Math.round(gram)));
     const n = gram >= 4 ? 16 : 12, bw = pw / n, a = GR[gram][0], b = GR[gram][1];
@@ -130,6 +130,7 @@ window.CRAQUE_UI.EST = (function () {
       g += patch(px + pw * 0.06, py + ph / 2, pw * 0.045 * sz, ph * 0.16 * sz, op) + patch(px + pw * 0.94, py + ph / 2, pw * 0.045 * sz, ph * 0.16 * sz, op) + patch(px + pw / 2, py + ph / 2, pw * 0.065 * sz, ph * 0.1 * sz, op * 0.75);
       const nn = gram ? 4 : 15; for (let i = 0; i < nn; i++) { const rx = (2.5 + r() * r() * 13) * k * (gram ? 0.7 : 1), ry = rx * (0.4 + r() * 0.5); g += patch(in_(px + pw * (0.06 + r() * 0.88), X0, X1, rx * 1.4), in_(py + ph * (0.08 + r() * 0.84), Y0, Y1, ry * 1.4), rx, ry, (gram ? 0.3 : 0.35 + r() * 0.35)); }
     }
+    if (noLines) return g;   // só o gramado (o campinho do ao vivo desenha as linhas dele)
     const st = ' fill="none" stroke="#F3F1EA" stroke-opacity=".82" stroke-width="' + f(1.15 * k) + '"';
     const ax = pw * 0.157, ay = ph * 0.593, gx = pw * 0.052, gy = ph * 0.27, cr = ph * 0.134;
     g += '<rect x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '"' + st + '/>';
@@ -288,5 +289,9 @@ window.CRAQUE_UI.EST = (function () {
       setTimeout(tick, 2200 + Math.random() * 7000); };
     setTimeout(tick, 1200 + Math.random() * 3500);
   }
-  return { svg, slice, live, depth: D0, pads: [['xadrez', 'Xadrez'], ['faixas', 'Faixas largas'], ['diagonal', 'Diagonal'], ['circulos', 'Círculos'], ['losango', 'Losangos'], ['cruzado', 'Cruzado']] };
+  // Gramado do estádio para o campinho do ao vivo (jogo em casa): o mesmo desenho do Estádio, sem linhas, em w x h
+  function turf(w, h, gram, seed, pad) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" height="' + h + '">' + pitch(0, 0, w, h, gram, w / 300, seed, pad, true) + '</svg>';
+  }
+  return { svg, slice, live, turf, depth: D0, pads: [['xadrez', 'Xadrez'], ['faixas', 'Faixas largas'], ['diagonal', 'Diagonal'], ['circulos', 'Círculos'], ['losango', 'Losangos'], ['cruzado', 'Cruzado']] };
 })();
