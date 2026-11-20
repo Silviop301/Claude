@@ -856,7 +856,9 @@
   // ---------- Disputa de pênaltis da copa (desenho aprovado c-penaltis.png): por cima do ao vivo, o placar dos pênaltis no
   // lugar do placar, o cartão de quem bate embaixo à esquerda e as cobranças no painel da direita, uma a cada 1,9 s; o motor já
   // decidiu tudo em S.coCupPens (m.pens). Pular mostra o fim na hora; o dourado do fim leva ao resultado.
-  function livePens(m, done) {
+  // Desde 20/11 (Silvio: "quero ver a cobrança dos jogadores") cada cobrança é animada no campinho (sim.pks em livesim.js):
+  // o painel anda quando a bola entra, é defendida ou sai; sem o campinho (jogo pulado) segue o relógio de antes.
+  function livePens(m, done, sim) {
     const co = C().co, P = S.coCupPens(co, m), root = document.querySelector('#ld .ldl'); if (!root) return done();
     const side = root.querySelector('.ldl-side'), sb = root.querySelector('.ldl-sb'), sh = root.querySelector('#lv-sheet');
     if (sh) { sh.classList.remove('on'); sh.innerHTML = ''; } if (sb) sb.style.visibility = 'hidden';
@@ -881,12 +883,15 @@
       else { const e = nx, n = cnt[e.s] + 1; who.innerHTML = '<small>' + (e.s === 'us' ? 'AGORA BATE' : 'BATE ' + esc(C().nm(m.vs)).toUpperCase()) + ' · ' + n + 'ª</small><b>' + esc(e.n) + '</b><span>' + esc(why(e)) + '</span>'; }
       side.innerHTML = '<div class="pk-list"><small>COBRANÇAS</small><div class="pk-h"><span></span>' + crest(hid, 'pk-c2') + crest(aid, 'pk-c2') + '</div>' + li + '</div>' +
         '<button class="pk-go" id="pk-go">' + (fim ? 'Ver o resultado' : 'Pular para o fim') + '</button>';
-      side.querySelector('#pk-go').onclick = () => { if (fim) { clearTimeout(tm); done(); } else { clearTimeout(tm); i = P.seq.length; paint(); } };
+      side.querySelector('#pk-go').onclick = () => { if (fim) { clearTimeout(tm); done(); } else { clearTimeout(tm); i = P.seq.length; paint(); if (anim) sim.pksSkip(); } };
     };
     const step = () => { const e = P.seq[i]; if (!e) return; i++;
       sfx(e.ok ? (e.s === 'us' ? (m.home ? 'goal' : 'goalAway') : 'whistle') : (e.s === 'us' ? 'uhh' : 'cheer'));
-      paint(); if (i < P.seq.length) tm = setTimeout(step, 1900); else sfx(P.us > P.them ? 'cheer' : 'vaia'); };
-    paint(); tm = setTimeout(step, 1600);
+      paint(); if (i < P.seq.length) { if (!anim) tm = setTimeout(step, 1900); } else sfx(P.us > P.them ? 'cheer' : 'vaia'); };
+    const anim = !!(sim && sim.pks);
+    paint();
+    if (anim) sim.pks(P.seq.map(e => ({ s: e.s === 'us' ? 0 : 1, num: e.num, ok: e.ok })), k => { if (i !== k) return; step(); }, null, P.us > P.them ? 0 : 1);
+    else tm = setTimeout(step, 1600);
   }
 
   // ---------- Partida ao vivo deitada (MainB): campinho grande com placar, grito e narração por cima; à direita o grito do
